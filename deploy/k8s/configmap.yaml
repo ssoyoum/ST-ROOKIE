@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: st-rookie-llm
+  namespace: st-rookie
+data:
+  LLM_PROVIDER: vllm
+  PRIVATE_LLM_ONLY: "1"
+  LLM_MODEL: steel-tutor
+  LLM_BASE_URL: http://vllm.st-rookie.svc.cluster.local:8000/v1
+  VLLM_MODEL_ID: REPLACE_WITH_MODEL_ID
