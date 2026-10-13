@@ -156,7 +156,7 @@
               <div style="align-self:flex-start;max-width:92%;padding:10px 13px;border-radius:12px;border:1px solid var(--line);color:var(--muted);font-size:15px;line-height:1.6;">{{ m.text }}</div>
             </sc-if>
           </sc-for>
-          <sc-if value="{{ pending }}" hint-placeholder-val="{{ false }}"><span style="font-size:15px;color:var(--dim);">튜터가 답을 쓰고 있어요…</span></sc-if>
+          <sc-if value="{{ pending }}" hint-placeholder-val="{{ false }}"><span style="font-size:15px;color:var(--dim);">{{ pendingText }}</span></sc-if>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 20px 12px;">
           <sc-for list="{{ chips }}" as="c" hint-placeholder-count="3">
@@ -422,7 +422,7 @@ class Component extends DCLogic {
         return { label, tip, on, bg: on ? 'var(--accent)' : 'transparent', color: on ? 'var(--accent-ink)' : 'var(--muted)', onClick: () => this.setState({ drawMode: m }) }; }),
       bpTitle: `${P?.name || ''} 공정 ${DRAW_MODES[S.drawMode][2]}`, bpNo: `SA-${P?.num || '00'}-${DRAW_MODES[S.drawMode][3]}`,
       messages: chat.messages.map(m => ({ ...m, isOk: m.isAssistant && m.evidence !== 'error', isError: m.isAssistant && m.evidence === 'error', citations: m.citations || [] })),
-      logEmpty: chat.messages.length === 0 && !S.pending, pending: S.pending, chips: chat.chips,
+      logEmpty: chat.messages.length === 0 && !S.pending, pending: S.pending, pendingText: chat.pendingText || '튜터가 답을 쓰고 있어요…', chips: chat.chips,
       ...cp, cpIdle: !cp.cpShowOverlay, cpSections,
       input: chat.input, onInput: chat.onInput, send: chat.send,
       // 아래 접힌 통계
