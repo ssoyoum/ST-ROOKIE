@@ -23,6 +23,7 @@
     "eval:retrieval": "npm run build && node .build/llm/eval/run-retrieval.js",
     "finetune:prepare": "npm run build && node .build/llm/finetune/prepare.js",
     "verify:private": "node scripts/verify-private-cutover.mjs",
+    "eval:supplement": "npm run build && node --env-file-if-exists=.env .build/llm/eval/run-supplement.js",
     "tunnel": "node --env-file-if-exists=.env scripts/tunnel.mjs",
     "db:reset-user": "npm run build && node --env-file-if-exists=.env .build/backend/src/db/reset-user.js",
     "db:seed-demo": "npm run build && node --env-file-if-exists=.env .build/backend/src/db/seed-demo-records.js"
