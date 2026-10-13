@@ -1,5 +1,5 @@
 import { LlmUnavailableError } from "../../backend/src/checkpoint/types.js";
-import { GeminiCallError } from "./gemini.js";
+import { GeminiCallError, readLines } from "./gemini.js";
 import { toJsonSchema } from "./json-schema.js";
 import type { GenerateRequest, LlmClient } from "./llm-client.js";
 
@@ -93,7 +93,8 @@ export class OllamaClient implements LlmClient {
         body: JSON.stringify({
           model,
           messages: [{ role: "system", content: system }, { role: "user", content: req.prompt }],
-          stream: false,
+          // onText가 있으면 NDJSON으로 조각마다 받는다(학습 모드 답을 화면에 바로 보여 준다).
+          stream: !!req.onText,
           keep_alive: keepAlive,
           ...(schema ? { format: schema } : {}),
           options: { temperature: req.temperature, num_predict: req.maxOutputTokens, num_ctx: contextLength },
@@ -102,6 +103,25 @@ export class OllamaClient implements LlmClient {
       });
     } catch (error) { throw connectionError(error); }
     if (!response.ok) throw new GeminiCallError(`Ollama HTTP ${response.status}`, response.status === 429 ? "rate_limit" : "http", response.status);
+    if (req.onText) {
+      let text = "";
+      try {
+        await readLines(response, (line) => {
+          const part = JSON.parse(line) as { message?: { content?: unknown }; error?: unknown };
+          if (part.error) throw new GeminiCallError(`Ollama 오류: ${String(part.error)}`, "http", response.status);
+          if (typeof part.message?.content === "string" && part.message.content) {
+            text += part.message.content;
+            req.onText!(text);
+          }
+        });
+      } catch (error) {
+        if (error instanceof GeminiCallError) throw error;
+        if (error instanceof SyntaxError) throw new GeminiCallError("Ollama 응답이 JSON이 아닙니다.", "http", response.status);
+        throw connectionError(error);
+      }
+      if (!text.trim()) throw new GeminiCallError("Ollama 응답이 비어 있거나 형식이 올바르지 않습니다.", "http", response.status);
+      return text;
+    }
     let body: { message?: { content?: unknown }; error?: unknown };
     try { body = await response.json() as typeof body; }
     catch (error) {
