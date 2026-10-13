@@ -2,8 +2,8 @@ import express from "express";
 import { join } from "node:path";
 import { GeminiAdminSummarizer } from "../../llm/src/admin-summary.js";
 import { GeminiEvaluator } from "../../llm/src/evaluator.js";
-import { GeminiClient } from "../../llm/src/gemini.js";
 import { GeminiLearningAgent } from "../../llm/src/learning-agent.js";
+import { createLlmClient } from "../../llm/src/provider.js";
 import { Retriever } from "../../llm/src/retrieval.js";
 import { GeminiTutor } from "../../llm/src/tutor.js";
 import { createAdminRouter } from "./admin/routes.js";
@@ -30,12 +30,15 @@ const rubrics = loadFinalRubrics();
 
 const db = openDatabase();
 const usage = new LlmUsage(db);
-// 체크포인트의 평가자·튜터 호출마다 현재 사용자의 하루 호출 수를 센다.
-const gemini = new GeminiClient({ beforeCall: () => usage.consume(currentUserId()) });
+// 체크포인트·학습·관리자 호출마다 현재 사용자의 하루 호출 수를 센다. 기본 provider는 Gemini다.
+const llm = createLlmClient({
+  gemini: { beforeCall: () => usage.consume(currentUserId()) },
+  vllm: { beforeCall: () => usage.consume(currentUserId()) },
+});
 const engine = new CheckpointEngine({
   repo: new CheckpointRepository(db),
-  evaluator: new GeminiEvaluator(gemini),
-  tutor: new GeminiTutor(gemini),
+  evaluator: new GeminiEvaluator(llm),
+  tutor: new GeminiTutor(llm),
   rubrics,
   // 부가 설명 때 튜터에게만 넘긴다(평가자에게는 넘기지 않음).
   learnerNotes: buildLearnerNotes,
@@ -55,7 +58,7 @@ useLearnerNotesSource({
 const learning = createLearningRouter({
   repo: learningRepo,
   retriever: new Retriever({ glossaryFor: (s) => rubrics.find((r) => r.section === s)?.glossary ?? [] }),
-  agent: new GeminiLearningAgent(gemini),
+  agent: new GeminiLearningAgent(llm),
   rubrics,
   // 튜터의 3D 화면 조작(scene_actions)에 쓸 공정·설비 목록. data_v2.js 형식이 틀리면 서버가 시작되지 않는다.
   scene: await loadSceneCatalog(),
@@ -65,8 +68,8 @@ const app = createApp({ engine, usage, learning });
 // 로그인·관리자 API(docs/auth-api.md). createApp의 /api 접속 비밀번호 검사가 먼저 적용된다.
 const auth = { users, secret: jwtSecret() };
 app.use(createAuthRouter(auth));
-// 관리자 AI 요약도 같은 GeminiClient로 관리자 계정의 하루 호출 수를 센다.
-app.use(createAdminRouter(db, auth, { summarizer: new GeminiAdminSummarizer(gemini) }));
+// 관리자 AI 요약도 같은 provider로 관리자 계정의 하루 호출 수를 센다.
+app.use(createAdminRouter(db, auth, { summarizer: new GeminiAdminSummarizer(llm) }));
 app.use(createMeRouter(db, auth));
 // 로그인·마이페이지(frontend/login_ui)는 ../3d-demo/를 상대 경로로 읽으므로 두 폴더를 같은 깊이에 둔다.
 const webRoot = join(process.cwd(), "frontend", "3d-demo");

@@ -2,18 +2,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { LlmUnavailableError } from "../../backend/src/checkpoint/types.js";
+import type { GenerateRequest } from "./llm-client.js";
+
+export type { GenerateRequest, LlmClient } from "./llm-client.js";
 
 /** GEMINI_MODEL이 비어 있을 때 쓰는 모델. */
 export const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
-
-export interface GenerateRequest {
-  system: string;
-  prompt: string;
-  temperature: number;
-  maxOutputTokens: number;
-  /** 있으면 JSON 응답을 이 스키마로 강제한다(Gemini responseSchema). */
-  responseSchema?: object;
-}
 
 export interface GeminiOptions {
   apiKey?: string;

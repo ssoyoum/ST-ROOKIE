@@ -3,6 +3,8 @@
 import express from "express";
 import { join } from "node:path";
 import { DEFAULT_GEMINI_MODEL } from "../../llm/src/gemini.js";
+import { providerInfo } from "../../llm/src/provider.js";
+import { DEFAULT_VLLM_BASE_URL } from "../../llm/src/vllm.js";
 import type { CheckpointEngine } from "./checkpoint/engine.js";
 import { createCheckpointRouter } from "./checkpoint/routes.js";
 import { withRequestUser } from "./request-user.js";
@@ -33,7 +35,14 @@ export function createApp({ engine, usage, webRoot = join(process.cwd(), "fronte
   app.use(express.static(webRoot));
 
   app.get("/api/status", (_req, res) => {
-    res.json({ connected: Boolean(process.env.GEMINI_API_KEY), provider: "Gemini", model: process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL });
+    const info = providerInfo();
+    const vllm = info.provider === "vllm";
+    res.json({
+      connected: vllm ? Boolean(process.env.LLM_MODEL) : Boolean(process.env.GEMINI_API_KEY),
+      provider: vllm ? "vLLM" : "Gemini",
+      model: vllm ? info.model : info.model || DEFAULT_GEMINI_MODEL,
+      base_url: vllm ? process.env.LLM_BASE_URL || DEFAULT_VLLM_BASE_URL : null,
+    });
   });
 
   // 첫 화면은 최종 페이지(v3).

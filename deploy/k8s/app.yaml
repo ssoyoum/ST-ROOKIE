@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: st-rookie
+  namespace: st-rookie
+  labels:
+    app: st-rookie
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: st-rookie
+  template:
+    metadata:
+      labels:
+        app: st-rookie
+    spec:
+      containers:
+        - name: app
+          image: REPLACE_WITH_REGISTRY/st-rookie:REPLACE_WITH_TAG
+          envFrom:
+            - configMapRef:
+                name: st-rookie-llm
+          env:
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: st-rookie-llm-secrets
+                  key: LLM_API_KEY
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /api/access
+              port: 3000
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: st-rookie
+  namespace: st-rookie
+spec:
+  type: ClusterIP
+  selector:
+    app: st-rookie
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
