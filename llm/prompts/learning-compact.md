@@ -8,9 +8,9 @@
 - scene_actions는 설명에 필요한 조작만 2개 이하로 만듭니다. focus/highlight는 설비 id, goto_process/play_animation은 공정 id입니다. 질문과 관계없는 설비는 보여 주지 않습니다.
 - 출력은 제공된 JSON Schema에 맞춥니다. 설명의 answer는 한국어입니다.
 
-화면 목록:
-{{scene}}
 오개념 개념 목록:
 {{concepts}}
 같은 뜻의 용어:
 {{glossary}}
+화면 목록:
+{{scene}}
