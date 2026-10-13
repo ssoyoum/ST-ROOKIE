@@ -17,6 +17,11 @@ import { compactLearningInput } from "./learning-context.js";
 const MAX_ATTEMPTS = 2;
 const TEMPERATURE = 0.3;
 const MAX_OUTPUT_TOKENS = 1200;
+/**
+ * 로컬 모델(compact) 출력 상한. 정상 답은 약 200토큰(2026-10-13 qwen2.5:3b 측정 182)이고, 가끔 답을 끝없이 이어 쓰는 경우를
+ * 768토큰까지 기다리면 한 번에 약 90초가 걸려서 450으로 낮춰 빨리 끊고 다시 부른다.
+ */
+export const COMPACT_OUTPUT_TOKENS = 450;
 const MAX_ANSWER_CHARS = 4000;
 /** 한 답변에 붙이는 화면 조작 수(공정 이동을 끼워 넣은 뒤 기준). */
 export const MAX_SCENE_ACTIONS = 4;
@@ -311,7 +316,7 @@ export class GeminiLearningAgent implements LearningAgent {
       system: learningSystemPrompt(input, this.profile),
       prompt: learningUserPrompt(input),
       temperature: TEMPERATURE,
-      maxOutputTokens: this.profile === "compact" ? 768 : MAX_OUTPUT_TOKENS,
+      maxOutputTokens: this.profile === "compact" ? COMPACT_OUTPUT_TOKENS : MAX_OUTPUT_TOKENS,
       responseSchema: learningResponseSchema(
         input.chunks.map((c) => c.id),
         input.concepts.map((c) => c.concept_id),
@@ -322,7 +327,8 @@ export class GeminiLearningAgent implements LearningAgent {
     let problem = "";
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       // 연결·HTTP 오류(LlmUnavailableError)는 503 과부하만 generate()가 다시 부르고 나머지는 그대로 올려 보낸다. 형식 오류는 여기서 다시 부른다.
-      const result = parseLearningReply(await this.generate(request), input);
+      // 로컬 모델은 가끔 답을 끝없이 이어 쓰다 출력 상한에서 잘려 JSON이 깨진다. 다시 부를 때는 temperature 0으로 덜 흔들리게 한다.
+      const result = parseLearningReply(await this.generate(attempt > 1 && this.profile === "compact" ? { ...request, temperature: 0 } : request), input);
       if (typeof result !== "string") return result;
       problem = result;
     }

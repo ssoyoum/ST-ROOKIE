@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { compactLearningInput } from "../../llm/src/learning-context.js";
-import { GeminiLearningAgent, type LearningInput } from "../../llm/src/learning-agent.js";
+import { COMPACT_OUTPUT_TOKENS, GeminiLearningAgent, type LearningInput } from "../../llm/src/learning-agent.js";
 import { Retriever, loadSectionChunks } from "../../llm/src/retrieval.js";
 import { getPublicSources } from "../../llm/src/ironmaking-sources.js";
 
@@ -31,7 +31,7 @@ test("compact tutor constrains citations to the evidence actually sent", async (
   const chunks = new Retriever().retrieve("ironmaking", "코크스의 환원 역할은?");
   const input: LearningInput = { section: "ironmaking", question: "코크스의 환원 역할은?", screen: {}, chunks, history: [], concepts: [], openMisconceptions: [] };
   const agent = new GeminiLearningAgent({ generate: async (request) => {
-    assert.equal(request.maxOutputTokens, 768);
+    assert.equal(request.maxOutputTokens, COMPACT_OUTPUT_TOKENS);
     assert.match(request.system, /follow_up은 기본 null/);
     const allowed = compactLearningInput(input).chunks.map((c) => c.id);
     assert.equal(allowed.length, 3);
