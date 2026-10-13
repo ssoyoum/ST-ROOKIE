@@ -23,6 +23,8 @@ import { GeminiLearningAgent, type LearningAgent, type LearningInput } from "../
 import { findLeaks, hasLeak } from "../src/question-check.js";
 import { Retriever } from "../src/retrieval.js";
 import { GeminiTutor, type PracticeQuestion } from "../src/tutor.js";
+import type { LlmClient } from "../src/llm-client.js";
+import { configuredProvider, createLlmClient, providerInfo } from "../src/provider.js";
 import { fingerprint, flag, InfraStreak, isInfraError, MAX_CONSECUTIVE_INFRA, openRecordFile, option, RESULTS_DIR, RetryingGeminiClient, sleep, type RunRecord } from "./run-log.js";
 
 export const SUPPLEMENT_SET_PATH = join(process.cwd(), "llm", "eval", "supplement", "ironmaking.jsonl");
@@ -152,7 +154,7 @@ function dryParts(s: Scenario) {
   return { agent, tutor, evaluator };
 }
 
-export async function runScenario(s: Scenario, deps: { rubrics: Rubric[]; scene: Awaited<ReturnType<typeof loadSceneCatalog>>; dry: boolean; client?: RetryingGeminiClient }) {
+export async function runScenario(s: Scenario, deps: { rubrics: Rubric[]; scene: Awaited<ReturnType<typeof loadSceneCatalog>>; dry: boolean; client?: LlmClient }) {
   const rubric = deps.rubrics.find((r) => r.concepts.some((c) => c.concept_id === s.concept_id));
   if (!rubric) throw new Error(`${s.id}: 루브릭에 없는 개념 ${s.concept_id}`);
   const concept = rubric.concepts.find((c) => c.concept_id === s.concept_id)!;
@@ -161,7 +163,8 @@ export async function runScenario(s: Scenario, deps: { rubrics: Rubric[]; scene:
   const repo = new SupplementRepository(db);
   const user = "eval-supplement";
   if (s.memo) learningRepo.recordMisconception({ user_id: user, section: rubric.section, concept_id: s.concept_id, answer_text: "(시나리오)", summary: s.memo }, new Date().toISOString());
-  const parts = deps.dry ? dryParts(s) : { agent: new GeminiLearningAgent(deps.client!), tutor: new GeminiTutor(deps.client!), evaluator: new GeminiEvaluator(deps.client!) };
+  const profile = configuredProvider() === "ollama" ? "compact" : "full";
+  const parts = deps.dry ? dryParts(s) : { agent: new GeminiLearningAgent(deps.client!, undefined, profile), tutor: new GeminiTutor(deps.client!), evaluator: new GeminiEvaluator(deps.client!, { verifyBoundary: profile === "compact", repairFormat: profile === "compact" }) };
   const engine = new SupplementEngine({
     repo, learningRepo, rubrics: deps.rubrics, scene: deps.scene, ...parts,
     retriever: new Retriever({ glossaryFor: (sec) => deps.rubrics.find((r) => r.section === sec)?.glossary ?? [] }),
@@ -192,11 +195,13 @@ async function main(): Promise<void> {
   const scenarios = loadScenarios().filter((s) => !only || s.id === only);
   const rubrics = loadFinalRubrics();
   const scene = await loadSceneCatalog();
-  const model = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+  // LLM_PROVIDER=ollama면 로컬 모델로 돌린다(비용 없음). 기본은 Gemini.
+  const provider = configuredProvider();
+  const model = provider === "gemini" ? process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL : `${provider}:${providerInfo().model}`;
   const prompts = ["learning-system", "tutor-question", "tutor-recheck", "tutor-explanation", "tutor-correction", "evaluator"]
     .map((p) => readFileSync(join(process.cwd(), "llm", "prompts", `${p}.md`), "utf8"));
-  const records = openRecordFile<ScenarioResult>(option("records", join(RESULTS_DIR, dry ? "supplement-dry.jsonl" : "supplement.jsonl")), flag("resume"));
-  const client = dry ? undefined : new RetryingGeminiClient();
+  const records = openRecordFile<ScenarioResult>(option("records", join(RESULTS_DIR, dry ? "supplement-dry.jsonl" : provider === "gemini" ? "supplement.jsonl" : `supplement-${provider}.jsonl`)), flag("resume"));
+  const client = dry ? undefined : provider === "gemini" ? new RetryingGeminiClient() : createLlmClient();
   const streak = new InfraStreak();
   const delay = Number(process.env.EVAL_DELAY_MS ?? 1000);
   console.log(`보충학습 시나리오 ${scenarios.length}개 · ${dry ? "가짜 모델(--dry-run, 비용 없음)" : `실제 모델 ${model}`}`);

@@ -28,6 +28,8 @@ import {
   type SceneAction,
 } from "../src/learning-agent.js";
 import { Retriever } from "../src/retrieval.js";
+import type { GenerateRequest } from "../src/llm-client.js";
+import { configuredProvider, createLlmClient, providerInfo } from "../src/provider.js";
 import { fingerprint, flag, InfraStreak, isInfraError, MAX_CONSECUTIVE_INFRA, openRecordFile, option, RESULTS_DIR, RetryingGeminiClient, sleep, type RunRecord } from "./run-log.js";
 
 export const LEARNING_SET_DIR = join(process.cwd(), "llm", "eval", "learning");
@@ -139,20 +141,23 @@ const pct = (n: number, d: number) => (d ? `${((n / d) * 100).toFixed(1)}%` : "-
 const fmt = (actions: SceneAction[]) => (actions.length ? actions.map((a) => `${a.type}:${a.target_id}`).join(", ") : "(없음)");
 
 async function main(): Promise<void> {
-  if (!process.env.GEMINI_API_KEY) {
+  // LLM_PROVIDER=ollama면 로컬 모델(compact 프롬프트)로 돌린다(비용 없음). 기본은 Gemini.
+  const provider = configuredProvider();
+  if (provider === "gemini" && !process.env.GEMINI_API_KEY) {
     console.error("GEMINI_API_KEY가 없습니다. .env에 키를 넣고 다시 실행하세요.");
     process.exitCode = 1;
     return;
   }
-  const model = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+  const model = provider === "gemini" ? process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL : `${provider}:${providerInfo().model}`;
   const delayMs = Number(process.env.EVAL_DELAY_MS ?? 1000);
-  const records = openRecordFile<LearningRecord>(option("records", join(RESULTS_DIR, "learning.jsonl")), flag("resume"));
+  const records = openRecordFile<LearningRecord>(option("records", join(RESULTS_DIR, provider === "gemini" ? "learning.jsonl" : `learning-${provider}.jsonl`)), flag("resume"));
   const rubrics = loadFinalRubrics();
   const rubricOf = (section: Section) => rubrics.find((r) => r.section === section);
   const scene = await loadSceneCatalog();
   const retriever = new Retriever({ glossaryFor: (s) => rubricOf(s)?.glossary ?? [] });
-  const client = new RetryingGeminiClient();
-  const agent = new GeminiLearningAgent(client);
+  const local = provider === "gemini" ? null : createLlmClient();
+  const client = local ? { retries: [] as string[], reset() {}, generate: (r: GenerateRequest) => local.generate(r) } : new RetryingGeminiClient();
+  const agent = new GeminiLearningAgent(client, undefined, provider === "ollama" ? "compact" : "full");
   const streak = new InfraStreak();
   const followUp = flag("follow-up");
   const only = option("section", "");

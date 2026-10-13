@@ -57,6 +57,8 @@ interface EvalRecord extends RunRecord {
   explain_from: number | null;
   attempts: number;
   format_problems: string[];
+  /** 형식 보정·경계 재확인으로 바꾼 내용. */
+  adjustments?: string[];
   elapsed_ms: number;
   calls: CallTiming[];
   error?: string;
@@ -80,7 +82,9 @@ async function runEvaluator(client: MeasuredClient) {
   const selected = limit ? [...first, ...entries.filter((e) => !first.includes(e))].slice(0, limit) : entries;
   assert.ok(selected.length, "평가 케이스가 없습니다.");
   const records = openRecordFile<EvalRecord>(option("records", join(RESULTS_DIR, `ollama-evaluator-${set}.jsonl`)), flag("resume"));
-  const evaluator = new GeminiEvaluator(client);
+  // 경계 재확인(verifyBoundary)·형식 보정(repairFormat)은 로컬 모델 서버와 같이 켠다. --no-verify면 둘 다 끄고 잰다(전후 비교).
+  const verify = !flag("no-verify");
+  const evaluator = new GeminiEvaluator(client, { verifyBoundary: verify, repairFormat: verify });
   const results: EvalRecord[] = [];
   console.log(`${set}: ${selected.length}/${entries.length}개${limit ? " (표본)" : " (전체)"} · 기록 ${records.path}`);
   let infraStreak = 0;
@@ -88,7 +92,7 @@ async function runEvaluator(client: MeasuredClient) {
     const concept = rubric.concepts.find((k) => k.concept_id === c.concept_id);
     assert.ok(concept, `루브릭에 없는 개념: ${c.concept_id}`);
     const key = `${c.file}:${c.line}`;
-    const fp = fingerprint("ollama", model, baseUrl, "evaluator-v1", evaluatorSystemPrompt(rubric, concept, c.phase),
+    const fp = fingerprint("ollama", model, baseUrl, verify ? "evaluator-v2-verify" : "evaluator-v2", evaluatorSystemPrompt(rubric, concept, c.phase),
       evaluatorUserPrompt(c.question, c.answer), JSON.stringify(toJsonSchema(evaluatorResponseSchema(c.phase))));
     const prior = records.done(key, fp);
     if (prior) {
@@ -107,7 +111,7 @@ async function runEvaluator(client: MeasuredClient) {
       record = { ...common, infra_error: false, got: outcome.evaluation?.verdict ?? "format_error",
         evidence: outcome.evaluation?.evidence ?? "", misconception: outcome.evaluation?.misconception ?? null,
         explain_from: outcome.evaluation?.explain_from ?? null, attempts: outcome.attempts,
-        format_problems: outcome.formatProblems, elapsed_ms: Date.now() - started, calls: client.calls.slice(callStart) };
+        format_problems: outcome.formatProblems, adjustments: outcome.adjustments, elapsed_ms: Date.now() - started, calls: client.calls.slice(callStart) };
     } catch (error) {
       if (!isInfraError(error)) throw error;
       record = { ...common, infra_error: true, got: "infra_error", evidence: "", misconception: null,

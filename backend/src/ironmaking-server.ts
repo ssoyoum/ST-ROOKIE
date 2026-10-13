@@ -44,7 +44,8 @@ const llm = createLlmClient({
   ollama: { beforeCall: () => usage.consume(currentUserId()) },
 });
 // 평가자·튜터는 체크포인트와 보충학습이 함께 쓴다.
-const evaluator = new GeminiEvaluator(llm);
+// 로컬 모델(Ollama)은 wrong·partial 경계를 자주 틀려서 핵심 요소별로 한 번 더 확인한다(llm/src/evaluator.ts verifyBoundary).
+const evaluator = new GeminiEvaluator(llm, { verifyBoundary: configuredProvider() === "ollama", repairFormat: configuredProvider() === "ollama" });
 const tutor = new GeminiTutor(llm);
 const engine = new CheckpointEngine({
   repo: new CheckpointRepository(db),
