@@ -4,6 +4,8 @@
 
 실행과 자료 범위는 [README-ko.txt](README-ko.txt)를 참고하세요.
 
+Ollama에 기존 제선 근거와 튜터를 연결하는 방법: [로컬 Ollama 실행 안내](docs/ollama-local.md). 자료를 붙인 터미널 질문은 `npm.cmd run chat:ollama`, 웹 앱은 `npm.cmd run start:ollama`로 실행합니다. 실제 모델로 제선 체크포인트 전체 흐름을 검증하려면 `npm.cmd run test:ollama-checkpoint`, 채점 평가 세트를 실행하려면 `npm.cmd run eval:ollama -- --set smoke --limit 7`을 사용합니다.
+
 ```powershell
 npm.cmd ci
 # .env 파일의 GEMINI_API_KEY= 뒤에 본인의 키 입력

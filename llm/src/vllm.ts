@@ -1,6 +1,7 @@
 import { LlmUnavailableError } from "../../backend/src/checkpoint/types.js";
 import { GeminiCallError } from "./gemini.js";
 import type { GenerateRequest, LlmClient } from "./llm-client.js";
+import { toJsonSchema } from "./json-schema.js";
 
 export interface VllmOptions {
   baseUrl?: string;
@@ -45,7 +46,7 @@ export class VllmClient implements LlmClient {
             ? {
                 response_format: {
                   type: "json_schema",
-                  json_schema: { name: "llm_response", schema: openAiJsonSchema(req.responseSchema) },
+                  json_schema: { name: "llm_response", schema: toJsonSchema(req.responseSchema) },
                 },
               }
             : {}),
@@ -74,15 +75,4 @@ export class VllmClient implements LlmClient {
     if (Array.isArray(content)) return content.map((part) => part.text ?? "").join("");
     return "";
   }
-}
-
-/** Gemini responseSchema의 대문자 타입을 표준 JSON Schema로 변환한다. */
-function openAiJsonSchema(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(openAiJsonSchema);
-  if (!value || typeof value !== "object") return value;
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(([key]) => key !== "propertyOrdering")
-      .map(([key, item]) => [key, key === "type" && typeof item === "string" ? item.toLowerCase() : openAiJsonSchema(item)]),
-  );
 }

@@ -1,7 +1,7 @@
 import { GeminiAdminSummarizer } from "../../llm/src/admin-summary.js";
 import { GeminiEvaluator } from "../../llm/src/evaluator.js";
 import { GeminiLearningAgent } from "../../llm/src/learning-agent.js";
-import { createLlmClient } from "../../llm/src/provider.js";
+import { configuredProvider, createLlmClient } from "../../llm/src/provider.js";
 import { Retriever } from "../../llm/src/retrieval.js";
 import { GeminiTutor } from "../../llm/src/tutor.js";
 import { createAdminRouter } from "./admin/routes.js";
@@ -33,6 +33,7 @@ const usage = new LlmUsage(db);
 const llm = createLlmClient({
   gemini: { beforeCall: () => usage.consume(currentUserId()) },
   vllm: { beforeCall: () => usage.consume(currentUserId()) },
+  ollama: { beforeCall: () => usage.consume(currentUserId()) },
 });
 const engine = new CheckpointEngine({
   repo: new CheckpointRepository(db),
@@ -57,7 +58,7 @@ useLearnerNotesSource({
 const learning = createLearningRouter({
   repo: learningRepo,
   retriever: new Retriever({ glossaryFor: (s) => rubrics.find((r) => r.section === s)?.glossary ?? [] }),
-  agent: new GeminiLearningAgent(llm),
+  agent: new GeminiLearningAgent(llm, undefined, configuredProvider() === "ollama" ? "compact" : "full"),
   rubrics,
   // 튜터의 3D 화면 조작(scene_actions)에 쓸 공정·설비 목록. data_v2.js 형식이 틀리면 서버가 시작되지 않는다.
   scene: await loadSceneCatalog(),

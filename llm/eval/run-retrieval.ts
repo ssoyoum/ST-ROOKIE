@@ -1,7 +1,8 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { z } from "zod";
-import { Retriever, type Screen } from "../src/retrieval.js";
+import { Retriever, publicSourceChunks, type Screen } from "../src/retrieval.js";
+import { option, flag } from "./run-log.js";
 
 export const RETRIEVAL_SET_PATH = join(process.cwd(), "llm", "eval", "retrieval", "ironmaking.jsonl");
 
@@ -54,14 +55,26 @@ function pct(value: number, total: number): string {
 
 function main(): void {
   const cases = loadRetrievalSet();
-  const retriever = new Retriever();
+  const ranking = option("ranking", "idf");
+  if (ranking !== "idf" && ranking !== "overlap") throw new Error("--ranking은 idf 또는 overlap입니다.");
+  const maxResults = Number(option("max-results", "5"));
+  const retriever = new Retriever({ ranking, maxResults,
+    ...(flag("public-only") ? { chunksFor: () => publicSourceChunks() } : {}),
+  });
   const scores = cases.map((c) => scoreRetrieval(c, retriever));
   const hits = scores.filter((s) => s.hit).length;
   const mrr = scores.reduce((sum, s) => sum + s.reciprocalRank, 0) / scores.length;
   console.log(`검색 세트: ${cases.length}개`);
-  console.log(`Recall@5(케이스): ${hits}/${cases.length} (${pct(hits, cases.length)})`);
+  console.log(`Recall@${maxResults}(케이스): ${hits}/${cases.length} (${pct(hits, cases.length)})`);
   console.log(`MRR: ${mrr.toFixed(3)}`);
   for (const miss of scores.filter((s) => !s.hit)) console.log(`- ${miss.id}: 기대 ${miss.expected.join(", ") || "빈 결과"} / 검색 ${miss.retrieved.join(", ") || "빈 결과"}`);
+  const path = option("records", "");
+  if (path) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify({ ranking, max_results: maxResults, public_only: flag("public-only"), cases: cases.length,
+      hits, mrr, scores, at: new Date().toISOString() }, null, 2) + "\n", { flag: "wx" });
+  }
+  if (hits !== cases.length) process.exitCode = 1;
 }
 
 if (process.argv[1]?.endsWith("run-retrieval.js")) main();

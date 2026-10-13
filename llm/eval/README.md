@@ -2,6 +2,8 @@
 
 `npm run eval:evaluator -- --set smoke|hard`로 실제 Gemini 평가자를 돌려 기대 판정과 비교한다. 비용과 요청 제한 때문에 `npm test`에는 넣지 않는다(파일 형식 검사만 `backend/test/eval-set.test.ts`에서 한다).
 
+Ollama에서는 `npm run eval:ollama -- --set smoke|hard [--limit 7] [--resume]`을 사용한다. 같은 세트·루브릭·평가자 프롬프트를 네이티브 Ollama API로 실행하고 결과를 별도 파일에 기록한다. 기본 회귀 및 어려운 케이스의 평가와 별개로, `npm run test:ollama-checkpoint`는 독립 메모리 DB에서 제선 전체 HTTP 체크포인트 흐름(오답 → 설명 → 재확인 → 완료 → 진도 저장)을 실제 모델로 검증한다. 상세 실행법과 결과 해석은 [Ollama 문서](../../docs/ollama-local.md)를 따른다. 실제 모델 호출은 `npm test`에 포함하지 않는다.
+
 | 세트 | 용도 |
 |---|---|
 | `smoke/` | **회귀 테스트용.** 루브릭 표현을 그대로 따른 쉬운 케이스. 프롬프트·루브릭을 바꾼 뒤 깨진 곳이 없는지 확인한다. 거의 100%가 나와야 정상이고, 평가자 품질의 근거로 쓰지 않는다. |

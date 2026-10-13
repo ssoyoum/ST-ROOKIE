@@ -6,6 +6,8 @@
 
 현재 진행: 1단계의 provider 공통 계약, vLLM OpenAI 호환 어댑터, 서버 선택 설정, 어댑터 회귀 테스트를 구현했다. 4단계의 도구 계약·공정 범위 검증, 5단계의 데이터 검증·분할 스크립트, 6단계의 GKE 템플릿, 7단계의 Gemini 없는 cutover 검증 스크립트도 추가했다. 실제 provider 평가 실행, Agent 다중 턴 오케스트레이션, Fine-tuning 학습, GPU·GKE 배포는 아직 실행하지 않았다.
 
+로컬 Ollama 진행: `LLM_PROVIDER=ollama`, 네이티브 API 어댑터, 실제 모델 목록 상태 조회, `chat:ollama`와 `start:ollama`를 추가했다. Qwen2.5 3B에 기존 검색 근거와 튜터 프롬프트를 전달한 코크스 질문은 실제 응답·인용 검증을 완료했다. `test:ollama-checkpoint`로 독립 메모리 DB의 제선 전체 체크포인트 HTTP 흐름, `eval:ollama`로 기존 smoke/hard 채점 평가 세트를 실제 모델로 검증할 수 있다. 실행 명령과 범위는 [Ollama 로컬 안내](ollama-local.md)를 참고한다. API 흐름·평가 표본의 성공은 전체 교육 품질이나 Fine-tuning 완료를 의미하지 않는다.
+
 RAG 진행: `npm run eval:retrieval`로 제선 검색 기준선 세트와 Recall@5/MRR을 측정할 수 있게 했다. 2026-10-13 현재 8개 케이스에서 Recall@5 8/8(100.0%), MRR 0.729였다. 이 수치는 현재 공개 자료와 작은 평가 세트의 검색 기준선이며 전체 답변 정확도가 아니다. 정답 근거 라벨 확대와 임베딩·재정렬 비교는 다음 작업이다.
 
 추가 명령:
@@ -65,7 +67,7 @@ LLM_MODEL=<서빙 모델 이름>
 LLM_API_KEY=<내부 인증 값>
 ```
 
-현재 코드는 위 신규 설정을 읽지 않는다. 연결부를 구현한 뒤 `LLM_PROVIDER=vllm`로 선택한다. Gemini와 자체 서버의 인증 설정은 별도로 관리한다.
+현재 코드는 위 설정을 읽으며 `LLM_PROVIDER=gemini|vllm|ollama`를 지원한다. Ollama 로컬 개발은 `npm.cmd run start:ollama`가 provider와 기본 모델·주소를 설정한다. Gemini와 자체 서버의 인증 설정은 별도로 관리한다.
 
 산출물: 공통 클라이언트, 두 어댑터, 설정 예시, provider별 회귀 검증 결과.
 

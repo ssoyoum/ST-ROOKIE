@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { DEFAULT_GEMINI_MODEL } from "../../llm/src/gemini.js";
 import { providerInfo } from "../../llm/src/provider.js";
 import { DEFAULT_VLLM_BASE_URL } from "../../llm/src/vllm.js";
+import { OllamaClient } from "../../llm/src/ollama.js";
 import type { CheckpointEngine } from "./checkpoint/engine.js";
 import { createCheckpointRouter } from "./checkpoint/routes.js";
 import { withRequestUser } from "./request-user.js";
@@ -36,8 +37,13 @@ export function createApp({ engine, usage, webRoot = join(process.cwd(), "fronte
   if (learning) app.use(learning);
   app.use(express.static(webRoot));
 
-  app.get("/api/status", (_req, res) => {
+  app.get("/api/status", async (_req, res) => {
     const info = providerInfo();
+    if (info.provider === "ollama") {
+      const status = await new OllamaClient().checkConnection();
+      res.json({ ...status, provider: "Ollama", model: info.model, base_url: info.baseUrl });
+      return;
+    }
     const vllm = info.provider === "vllm";
     res.json({
       connected: vllm ? Boolean(process.env.LLM_MODEL) : Boolean(process.env.GEMINI_API_KEY),

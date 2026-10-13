@@ -12,6 +12,7 @@ import { escapeDelimited, GeminiCallError, renderPrompt } from "./gemini.js";
 import type { LlmClient } from "./llm-client.js";
 import { politeText } from "./polite.js";
 import type { Retrieved, Screen } from "./retrieval.js";
+import { compactLearningInput } from "./learning-context.js";
 
 const MAX_ATTEMPTS = 2;
 const TEMPERATURE = 0.3;
@@ -131,8 +132,8 @@ export function sceneIds(scene: SceneCatalog | undefined): string[] {
   return scene ? scene.processes.flatMap((p) => [p.id, ...p.equipment.map((e) => e.id)]) : [];
 }
 
-export function learningSystemPrompt(input: Pick<LearningInput, "section" | "concepts" | "glossary" | "scene" | "keywordConcepts">): string {
-  return renderPrompt("learning-system", {
+export function learningSystemPrompt(input: Pick<LearningInput, "section" | "concepts" | "glossary" | "scene" | "keywordConcepts">, profile: "full" | "compact" = "full"): string {
+  return renderPrompt(profile === "compact" ? "learning-compact" : "learning-system", {
     section_name: SECTION_NAMES[input.section],
     concepts: input.concepts.length ? input.concepts.map((c) => `- ${c.concept_id}: ${c.name}`).join("\n") : "(없음: detected_misconception은 항상 null)",
     keyword_concepts: input.keywordConcepts?.length
@@ -285,6 +286,7 @@ export class GeminiLearningAgent implements LearningAgent {
   constructor(
     private readonly gemini: LlmClient,
     private readonly retryDelaysMs: number[] = OVERLOAD_RETRY_DELAYS_MS,
+    private readonly profile: "full" | "compact" = "full",
   ) {}
 
   /**
@@ -304,11 +306,12 @@ export class GeminiLearningAgent implements LearningAgent {
   }
 
   async reply(input: LearningInput): Promise<LearningReply> {
+    if (this.profile === "compact") input = compactLearningInput(input);
     const request = {
-      system: learningSystemPrompt(input),
+      system: learningSystemPrompt(input, this.profile),
       prompt: learningUserPrompt(input),
       temperature: TEMPERATURE,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      maxOutputTokens: this.profile === "compact" ? 768 : MAX_OUTPUT_TOKENS,
       responseSchema: learningResponseSchema(
         input.chunks.map((c) => c.id),
         input.concepts.map((c) => c.concept_id),

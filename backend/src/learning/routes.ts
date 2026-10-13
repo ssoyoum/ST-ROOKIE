@@ -141,11 +141,11 @@ export function createLearningRouter({ repo, retriever, agent, rubrics, scene, s
       if (error instanceof UsageLimitError) {
         res.status(429).json({ error: `오늘 쓸 수 있는 튜터 호출(${error.limit}회)을 다 썼어요.`, code: "USAGE_LIMIT" });
       } else if (error instanceof LlmUnavailableError) {
-        console.error(`학습 모드 Gemini 오류: ${error.message}`);
+        console.error(`학습 모드 LLM 오류: ${error.message}`);
         res.status(error.status).json(
           error.status === 503
-            ? { error: "Gemini가 연결되지 않았어요. 서버에 GEMINI_API_KEY를 설정해 주세요.", code: "LLM_NOT_CONFIGURED" }
-            : { error: "Gemini 연결 중 오류가 생겼어요. 잠시 후 다시 시도해 주세요." },
+            ? { error: "튜터 모델에 연결하지 못했어요. 모델 서버와 연결 설정을 확인해 주세요.", code: "LLM_NOT_CONFIGURED" }
+            : { error: "튜터 모델 연결 중 오류가 생겼어요. 잠시 후 다시 시도해 주세요." },
         );
       } else if (error instanceof LearningFormatError) {
         console.error(error.message);
