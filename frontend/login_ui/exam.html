@@ -81,19 +81,19 @@
       </aside>
     </div>
   </main>
-  <!-- 망치 로딩 화면(담금질 하기): 검은 배경과 달군 쇠·불꽃 오렌지는 그대로 두고 글꼴·간격만 체계에 맞춘다 -->
+  <!-- 담금질 로딩 화면: 흐린 페이지 위에 학습 기록 체계의 카드. 망치·모루·달군 쇠 그림과 동작은 그대로, 색은 exam.css의 변수(테마별)로 칠한다 -->
   <dialog id="forge" class="forge-screen" aria-labelledby="forge-title" aria-describedby="forge-phase">
     <div class="forge-content">
-      <span class="forge-eyebrow">FORGING YOUR KNOWLEDGE</span>
+      <span class="forge-eyebrow">[ FORGING ]</span>
       <svg class="forge-art" viewBox="0 0 360 240" aria-hidden="true">
-        <defs><linearGradient id="steel" x1="0" x2="1"><stop stop-color="#999da3"/><stop offset=".45" stop-color="#f0f0ec"/><stop offset="1" stop-color="#6d7278"/></linearGradient><linearGradient id="heat" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#ff6425"/><stop offset="1" stop-color="#ffbe6a"/></linearGradient><radialGradient id="glow"><stop stop-color="#ff7429" stop-opacity=".22"/><stop offset="1" stop-color="#ff7429" stop-opacity="0"/></radialGradient></defs>
+        <defs><linearGradient id="steel" x1="0" x2="1"><stop class="steel-a"/><stop class="steel-b" offset=".45"/><stop class="steel-c" offset="1"/></linearGradient><linearGradient id="heat" x1="0" y1="1" x2="0" y2="0"><stop class="heat-a"/><stop class="heat-b" offset="1"/></linearGradient><radialGradient id="glow"><stop class="glow-a"/><stop class="glow-b" offset="1"/></radialGradient></defs>
         <ellipse cx="183" cy="161" rx="140" ry="70" fill="url(#glow)"/>
-        <path class="anvil" d="M72 149h214l-28 17h-27l-9 25 25 11v10H121v-10l25-11-9-25H99z" fill="#27282a" stroke="#58514b" stroke-width="2"/>
-        <path d="M73 149h214" stroke="#d9a681" stroke-width="2"/>
+        <path class="anvil" d="M72 149h214l-28 17h-27l-9 25 25 11v10H121v-10l25-11-9-25H99z" stroke-width="2"/>
+        <path class="anvil-edge" d="M73 149h214" stroke-width="2"/>
         <rect class="billet" x="155" y="133" width="66" height="15" rx="3" fill="url(#heat)"/>
-        <g class="hammer"><path d="M241 56l-43 62" stroke="#8b5737" stroke-width="12" stroke-linecap="round"/><path d="M239 57l-42 60" stroke="#d39967" stroke-width="5" stroke-linecap="round"/><rect x="166" y="111" width="61" height="23" rx="4" fill="url(#steel)"/><path d="M169 129h55" stroke="#ff8a43" stroke-width="2"/></g>
-        <g class="sparks" stroke="#ff9a46" stroke-width="2.4" stroke-linecap="round"><path d="M181 132l-31-35"/><path d="M184 130l-4-41"/><path d="M200 132l30-30"/><path d="M211 139l41-9"/><path d="M171 140l-42-9"/><path d="M208 142l32 15"/></g>
-        <ellipse cx="185" cy="220" rx="91" ry="5" fill="#000"/>
+        <g class="hammer"><path class="handle" d="M241 56l-43 62" stroke-width="12" stroke-linecap="round"/><path class="handle-hi" d="M239 57l-42 60" stroke-width="5" stroke-linecap="round"/><rect x="166" y="111" width="61" height="23" rx="4" fill="url(#steel)"/><path class="head-edge" d="M169 129h55" stroke-width="2"/></g>
+        <g class="sparks" stroke-width="2.4" stroke-linecap="round"><path d="M181 132l-31-35"/><path d="M184 130l-4-41"/><path d="M200 132l30-30"/><path d="M211 139l41-9"/><path d="M171 140l-42-9"/><path d="M208 142l32 15"/></g>
+        <ellipse class="ground" cx="185" cy="220" rx="91" ry="5"/>
       </svg>
       <h2 id="forge-title">담금질 하기<span class="orange-dot">.</span></h2>
       <p id="forge-phase" role="status" aria-live="polite">요청을 준비하고 있어요.</p>
@@ -102,7 +102,7 @@
       <div class="forge-line" aria-hidden="true"><span></span></div>
       <p class="forge-time"><span class="live-dot" aria-hidden="true"></span>처리 중 <time id="elapsed">00:00</time></p>
       <p class="forge-help">단단한 배움을 만드는 중이에요.<br>응답을 받으면 자동으로 시험 화면으로 돌아가요.</p>
-      <div class="forge-actions"><button id="cancel-job" class="forge-cancel">요청 취소</button><button id="reconnect" class="forge-cancel" hidden>연결 다시 확인</button></div>
+      <div class="forge-actions"><button id="cancel-job" class="btn secondary">요청 취소</button><button id="reconnect" class="btn secondary" hidden>연결 다시 확인</button></div>
     </div>
   </dialog>
 </body>

@@ -1,5 +1,5 @@
 /* 평가 시험 페이지(/exam). 학습 기록(Trainee Dashboard.dc.html)과 같은 토큰·헤더·제목·카드 체계를 쓴다.
-   오렌지 강조는 쓰지 않고, 망치 로딩 화면(담금질 하기)의 달군 쇠·불꽃 오렌지만 남긴다. */
+   오렌지 강조는 쓰지 않는다. 망치 로딩 화면(담금질 하기)도 같은 체계의 카드이고, 달군 쇠·불꽃만 --mid 계열 호박색이다. */
 html, body { margin: 0; min-height: 100%; }
 body {
   --font-ko: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
@@ -205,35 +205,48 @@ h1 { font-family: var(--font-en); font-weight: 800; font-size: clamp(36px, 5.4vw
 .item strong { font-size: 15px; font-weight: 600; }
 .item .btn { align-self: flex-start; margin-top: 4px; }
 
-/* 망치 로딩 화면: 검은 배경 · 달군 쇠 · 불꽃 오렌지는 그대로. 글꼴·간격만 체계에 맞춘다 */
-.forge-screen { border: none; margin: 0; padding: 0; max-width: none; max-height: none; width: 100vw; height: 100dvh; color: #f8eee8; background: #0c0b0a; overflow: auto; font-family: var(--font-ko); letter-spacing: -0.01em; }
-.forge-screen::backdrop { background: #0c0b0a; }
-.forge-content { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 36px 20px; }
-.forge-eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: 0.26em; color: #976b4e; }
-.forge-art { width: min(360px, 85vw); height: 240px; margin: 16px 0 0; }
+/* 담금질 로딩 화면: 학습 기록 체계의 카드(둥근 18px · 선 1px · --folder 바탕)를 흐린 페이지 위 가운데에 띄운다.
+   망치·모루·달군 쇠 그림과 동작은 그대로 두고 색만 토큰으로 맞춘다(쇠는 회색, 달군 쇠·불꽃은 --mid 계열 호박색). */
+.forge-screen { --forge-heat: #e8c25a; --forge-heat-hi: #f7dd8c; --forge-anvil: #2b2b2f; --forge-steel-a: #8e8e93; --forge-steel-b: #f2f2f2; --forge-steel-c: #6b6b70; --forge-handle: #a1a1a6; --forge-handle-hi: #d4d4d8; --forge-glow: .22;
+  border: none; margin: 0; padding: 20px; max-width: none; max-height: none; width: 100vw; height: 100dvh; background: transparent; color: var(--text); overflow: auto; font-family: var(--font-ko); letter-spacing: -0.01em; display: grid; place-items: center; }
+.forge-screen:not([open]) { display: none; }
+.forge-screen::backdrop { background: rgba(28, 28, 28, .78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+body[data-theme="light"] .forge-screen { --forge-heat: #e0a62f; --forge-heat-hi: #f3cf6d; --forge-anvil: #3a3a40; --forge-steel-a: #9a9aa0; --forge-steel-b: #ffffff; --forge-steel-c: #6b6b71; --forge-handle: #8c8c92; --forge-handle-hi: #c9c9ce; --forge-glow: .14; }
+body[data-theme="light"] .forge-screen::backdrop { background: rgba(244, 244, 245, .8); }
+.forge-content { width: min(560px, 100%); display: flex; flex-direction: column; align-items: center; text-align: center; padding: 34px 28px 28px; border-radius: 18px; background: var(--folder); border: 1px solid var(--line); box-shadow: 0 24px 60px var(--shadow); }
+.forge-eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: 0.3em; color: var(--muted); }
+.forge-art { width: min(340px, 100%); height: 226px; margin: 10px 0 0; }
+/* 그림 색: 그라데이션 stop과 면·선을 CSS 변수로 칠해 테마를 따라간다 */
+.forge-art .anvil { fill: var(--forge-anvil); stroke: var(--line); }
+.forge-art .anvil-edge { stroke: var(--forge-steel-c); }
+.forge-art .steel-a { stop-color: var(--forge-steel-a); } .forge-art .steel-b { stop-color: var(--forge-steel-b); } .forge-art .steel-c { stop-color: var(--forge-steel-c); }
+.forge-art .heat-a { stop-color: var(--forge-heat); } .forge-art .heat-b { stop-color: var(--forge-heat-hi); }
+.forge-art .glow-a { stop-color: var(--forge-heat); stop-opacity: var(--forge-glow); } .forge-art .glow-b { stop-color: var(--forge-heat); stop-opacity: 0; }
+.forge-art .handle { stroke: var(--forge-handle); } .forge-art .handle-hi { stroke: var(--forge-handle-hi); }
+.forge-art .head-edge { stroke: var(--forge-heat); }
+.forge-art .sparks { stroke: var(--forge-heat-hi); }
+.forge-art .ground { fill: var(--shadow); }
 .hammer { transform-origin: 241px 56px; animation: strike 1.4s cubic-bezier(.5, 0, .3, 1) infinite; }
 .sparks { opacity: 0; transform-origin: 190px 139px; animation: spark 1.4s infinite; }
 .billet { animation: ember 1.4s infinite; }
-.forge-content h2 { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; margin: 12px 0 10px; }
-.forge-content .orange-dot { color: #ff8548; }
-.forge-content #forge-phase { font-size: 15px; color: #cbb9ae; max-width: 420px; }
-/* 지나온 단계 칸: 끝난 칸은 체크, 지금 칸은 깜빡이는 점. 서버 작업의 phase가 바뀔 때마다 한 칸씩 늘어난다 */
-.forge-steps { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 520px; }
+.forge-content h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 8px; }
+.forge-content .orange-dot { color: var(--forge-heat); }
+.forge-content #forge-phase { font-size: 15px; color: var(--muted); max-width: 420px; }
+/* 지나온 단계 칸: 상태 칩 모양. 끝난 칸은 체크, 지금 칸은 깜빡이는 점. 서버 작업의 phase가 바뀔 때마다 한 칸씩 늘어난다 */
+.forge-steps { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 480px; }
 .forge-steps:empty { display: none; }
-.forge-steps li { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 11px; border-radius: 999px; border: 1px solid #493326; color: #cbb9ae; font-size: 13px; white-space: nowrap; }
-.forge-steps li.now { color: #ffb381; border-color: #ba6837; }
-.forge-steps li i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.forge-steps li { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 11px; border-radius: 6px; background: var(--panel2); color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.forge-steps li.now { background: var(--chip-on); color: var(--text); }
+.forge-steps li i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
 .forge-steps li.now i { animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
-.forge-line { width: 160px; height: 2px; background: #33251c; margin: 26px 0 16px; overflow: hidden; border-radius: 3px; }
-.forge-line span { display: block; width: 60px; height: 2px; background: #ff8548; animation: travel 1.8s ease-in-out infinite; }
-.forge-time { font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; color: #a98871; display: flex; align-items: center; gap: 9px; }
-.forge-time time { color: #ffb381; margin-left: 3px; }
-.live-dot { height: 5px; width: 5px; background: #ff8548; border-radius: 50%; }
-.forge-help { margin-top: 24px; font-size: 13px; color: #8a7a6f; line-height: 1.8; }
-.forge-actions { display: flex; gap: 10px; margin-top: 28px; }
-.forge-cancel { height: 40px; padding: 0 18px; border-radius: 10px; border: 1px solid #493326; background: transparent; color: #b59985; font-size: 15px; font-weight: 600; }
-.forge-cancel:hover { color: #ffb381; border-color: #ba6837; }
+.forge-line { width: 160px; height: 2px; background: var(--line); margin: 22px 0 14px; overflow: hidden; border-radius: 3px; }
+.forge-line span { display: block; width: 60px; height: 2px; background: var(--text); animation: travel 1.8s ease-in-out infinite; }
+.forge-time { font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; color: var(--muted); display: flex; align-items: center; gap: 9px; }
+.forge-time time { color: var(--text); margin-left: 3px; }
+.live-dot { height: 6px; width: 6px; background: var(--ok); border-radius: 50%; }
+.forge-help { margin-top: 18px; font-size: 13px; color: var(--dim); line-height: 1.8; }
+.forge-actions { display: flex; gap: 10px; margin-top: 22px; }
 @keyframes strike { 0%, 19% { transform: rotate(38deg); } 40%, 44% { transform: rotate(-3deg); } 60%, 100% { transform: rotate(38deg); } }
 @keyframes spark { 0%, 35%, 59%, 100% { opacity: 0; transform: scale(.3); } 40% { opacity: 1; transform: scale(.7); } 56% { opacity: 0; transform: scale(1.2); } }
 @keyframes ember { 0%, 32%, 70%, 100% { opacity: .78; } 40%, 48% { opacity: 1; } }
@@ -275,7 +288,10 @@ h1 { font-family: var(--font-en); font-weight: 800; font-size: clamp(36px, 5.4vw
   .steps li { padding: 12px; }
   .concept-result { grid-template-columns: minmax(64px, 110px) minmax(0, 1fr) auto; gap: 10px; }
   .form-bottom { flex-wrap: wrap; }
-  .forge-content h2 { font-size: 34px; }
+  .forge-screen { padding: 16px; }
+  .forge-content { padding: 26px 18px 22px; }
+  .forge-art { height: 200px; }
+  .forge-content h2 { font-size: 26px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
