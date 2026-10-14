@@ -80,6 +80,7 @@
       <button type="button" onClick="{{ toggleTheme }}" aria-label="테마 전환" style="width:40px;height:40px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-size:15px;cursor:pointer;" style-hover="background:var(--panel2);color:var(--text);">{{ themeIcon }}</button>
       <button type="button" onClick="{{ logout }}" style="height:40px;padding:0 16px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-size:15px;font-weight:500;cursor:pointer;" style-hover="background:var(--panel2);color:var(--text);">로그아웃</button>
       <a href="/3d-demo/steel-index.html" target="_top" style="display:flex;align-items:center;height:40px;padding:0 20px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-size:15px;font-weight:700;white-space:nowrap;" style-hover="opacity:.88;">학습 화면</a>
+      <a href="/exam" target="_top" style="display:flex;align-items:center;height:40px;padding:0 18px;border-radius:10px;border:1px solid var(--line);color:var(--text);font-size:15px;font-weight:700;white-space:nowrap;">평가 시험</a>
     </nav>
   </header>
 
@@ -137,12 +138,8 @@
       </div>
 
       <div class="side">
-      <!-- ASK(AI 튜터) / LEARN(이해도 확인) 중 하나만 보인다 -->
-      <div role="tablist" aria-label="ASK / LEARN" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--panel2);">
-        <sc-for list="{{ sideTabs }}" as="t" hint-placeholder-count="2">
-          <button type="button" role="tab" aria-selected="{{ t.on }}" onClick="{{ t.onClick }}" style="height:34px;border:none;border-radius:8px;background:{{ t.bg }};color:{{ t.color }};cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><span style="font-family:var(--font-en);font-size:15px;font-weight:800;letter-spacing:.08em;">{{ t.label }}</span><span style="font-size:15px;opacity:.75;">{{ t.sub }}</span></button>
-        </sc-for>
-      </div>
+      <!-- AI 튜터는 학습 전용이며 평가 시험은 별도 페이지에서 진행한다. -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0;"><span style="font-size:15px;font-weight:700;">AI 튜터</span><a href="/exam" target="_top" style="padding:8px 16px;border:1px solid var(--line);border-radius:999px;font-size:13px;color:var(--text);">평가 시험 응시 ↗</a></div>
       <sc-if value="{{ showAsk }}" hint-placeholder-val="{{ true }}">
       <!-- AI 튜터: 인스타그램 DM처럼(이름·상태 머리, 왼쪽 회색/오른쪽 그라데이션 말풍선, 연속 말풍선 묶음, 입력 중 점, 알약 입력창) -->
       <aside class="card tutor" aria-label="AI 튜터" style="padding:0;overflow:hidden;">
@@ -178,7 +175,6 @@
           </sc-for>
         </div>
         <!-- 이해도 확인에 답하는 중 학습 질문을 하려 하면: [멈추고 질문하기] (checkpoint-chat.js) -->
-        <sc-if value="{{ cpShowPauseOffer }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;margin:0 14px 10px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);"><span style="flex:1;font-size:15px;line-height:1.5;">{{ cpPauseOfferText }}</span><button type="button" onClick="{{ onCpPauseForLearning }}" style="height:32px;padding:0 12px;border-radius:999px;border:none;background:var(--accent);color:var(--accent-ink);font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap;">{{ cpPauseOfferLabel }}</button></div></sc-if>
         <form onSubmit="{{ send }}" data-al="form" style="padding:0 14px 14px;">
           <div style="display:flex;align-items:center;gap:8px;min-height:40px;padding:4px 6px 4px 18px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);">
             <input id="tutorInput" value="{{ input }}" onChange="{{ onInput }}" placeholder="메시지 보내기…" aria-label="질문" style="flex:1;min-width:0;height:32px;padding:0;border:none;background:transparent;color:var(--text);font-size:15px;outline:none;">
@@ -187,82 +183,6 @@
         </form>
         </div>
       </aside>
-      </sc-if>
-      <sc-if value="{{ showLearn }}" hint-placeholder-val="{{ false }}">
-
-      <!-- 이해도 확인(담금질): 3D 화면 오버레이에서 옮겨 왔다. 로직·문장은 그대로 checkpoint-chat.js(vals, sectionBadge), 캐릭터는 cp-character.js -->
-      <section class="card" aria-label="이해도 확인" style="--chrome:var(--panel2);--chrome2:var(--bg);--chrome3:var(--panel2);--line2:var(--line);display:flex;flex-direction:column;gap:12px;padding:18px 20px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent;">
-        <div style="display:flex;flex-direction:column;gap:6px;"><span class="eyebrow">LEARN · 이해도 확인</span><h2 class="h2">배운 걸 확인해요</h2><span style="font-size:15px;color:var(--dim);">공정마다 개념 질문에 답하고 80% 이상이면 다음 공정이 열려요</span></div>
-        <sc-if value="{{ cpIdle }}" hint-placeholder-val="{{ true }}">
-          <div style="display:flex;flex-direction:column;">
-            <sc-for list="{{ cpSections }}" as="x" hint-placeholder-count="4">
-              <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);">
-                <span style="font-family:var(--font-en);font-size:16px;font-weight:800;color:var(--dim);width:26px;">{{ x.num }}</span>
-                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><strong style="font-size:15px;">{{ x.name }}</strong><span style="font-size:15px;color:{{ x.cpSectionStatusColor }};">{{ x.cpSectionStatus }}</span></span>
-                <sc-if value="{{ x.cpSectionShowStart }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ x.onCpSectionStart }}" disabled="{{ !x.cpSectionCanStart }}" style="height:34px;padding:0 14px;border-radius:9px;border:none;background:var(--accent);color:var(--accent-ink);font-size:15px;font-weight:700;cursor:{{ x.cpSectionCursor }};opacity:{{ x.cpSectionStartOpacity }};white-space:nowrap;">{{ x.cpSectionStartLabel }}</button></sc-if>
-              </div>
-            </sc-for>
-          </div>
-        </sc-if>
-        <sc-if value="{{ cpShowOverlay }}" hint-placeholder-val="{{ false }}">
-          <!-- cp-character의 기본 크기(220×260)대로 두고 가운데 정렬, 아래쪽은 잘라 카드 높이를 줄인다 --><div style="display:flex;justify-content:center;height:210px;overflow:hidden;position:relative;z-index:0;"><x-import component-from-global-scope="cp-character" motion="{{ cpCharacterMotion }}" model="/3d-demo/models/character/tutor.glb" hint-size="220,260" style="flex:none;width:220px;height:260px;"></x-import></div>
-          <div id="cpBody" style="flex:1 1 auto;display:flex;flex-direction:column;gap:12px;color:var(--text);">
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span style="font-size:15px;font-weight:700;">{{ cpTitle }}</span>
-              <span style="flex:none;padding:3px 10px;border-radius:999px;border:1px solid {{ cpStageColor }};color:{{ cpStageColor }};font-size:15px;font-weight:600;">{{ cpStageLabel }}</span>
-              <span style="flex:1;"></span>
-              <!-- 포석호 효과음(판정 반응 때만 짧은 짐승 소리) 켜기·끄기. 지원하지 않는 브라우저에서는 숨긴다 -->
-              <sc-if value="{{ cpSfxSupported }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onCpToggleSfx }}" title="정답·오답 때 포석호가 짧게 소리를 내요" style="height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">{{ cpSfxLabel }}</button></sc-if>
-              <sc-for list="{{ cpDots }}" as="d" hint-placeholder-count="0"><span title="{{ d.index }}" style="width:9px;height:9px;border-radius:50%;background:{{ d.color }};"></span></sc-for>
-            </div>
-            <sc-if value="{{ cpBubbleText }}" hint-placeholder-val="{{ false }}">
-              <div style="display:flex;flex-direction:column;gap:4px;--accent:#1f2328;--danger:#c53030;background:#ffffff;color:#1f2328;padding:12px 14px;border-radius:12px;font-size:15px;line-height:1.65;white-space:pre-line;text-wrap:pretty;"><span style="font-size:15px;font-weight:700;color:{{ cpBubbleColor }};">{{ cpBubbleLabel }}</span><span>{{ cpBubbleText }}</span></div>
-            </sc-if>
-            <sc-if value="{{ cpPending }}" hint-placeholder-val="{{ false }}">
-              <div style="align-self:flex-start;display:flex;gap:4px;padding:10px 12px;background:var(--chrome3);border-radius:10px;"><span style="width:6px;height:6px;border-radius:3px;background:var(--muted);animation:blink 1s infinite;"></span><span style="width:6px;height:6px;border-radius:3px;background:var(--muted);animation:blink 1s .2s infinite;"></span><span style="width:6px;height:6px;border-radius:3px;background:var(--muted);animation:blink 1s .4s infinite;"></span></div>
-            </sc-if>
-            <sc-if value="{{ cpOverlayShowResult }}" hint-placeholder-val="{{ false }}">
-              <div style="display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:10px;border:1px solid var(--line2);background:var(--chrome);">
-                <div style="display:flex;align-items:baseline;justify-content:space-between;"><span style="font-size:15px;color:var(--muted);">{{ cpResult.understandingLabel }}</span><span style="font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;">{{ cpResult.percent }}%</span></div>
-                <div style="position:relative;height:10px;margin-bottom:16px;border-radius:5px;background:var(--chrome3);"><div style="height:100%;width:{{ cpResult.percent }}%;border-radius:5px;background:{{ cpResult.color }};"></div><div style="position:absolute;top:-4px;bottom:-4px;left:{{ cpResult.thresholdPercent }}%;width:2px;background:var(--text);"><span style="position:absolute;top:18px;left:-26px;width:54px;text-align:center;font-size:15px;color:var(--muted);">{{ cpResult.thresholdLabel }}</span></div></div>
-                <span style="padding:9px 12px;border-radius:9px;border:1px solid {{ cpResult.color }};color:{{ cpResult.color }};font-size:15px;font-weight:700;">{{ cpResult.passLabel }}</span>
-                <sc-for list="{{ cpResult.bars }}" as="b" hint-placeholder-count="0">
-                  <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px;align-items:center;gap:10px;"><div style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:15px;font-weight:600;">{{ b.name }}</span><span style="font-size:15px;color:var(--muted);">{{ b.label }}</span></div><div style="height:8px;border-radius:4px;background:var(--chrome3);overflow:hidden;"><div style="height:100%;width:{{ b.widthPercent }}%;background:{{ b.color }};"></div></div></div>
-                </sc-for>
-              </div>
-            </sc-if>
-            <sc-if value="{{ cpConfirmPause }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:10px;padding:12px 14px;border-radius:10px;background:var(--chrome3);border:1px solid var(--line2);"><span style="font-size:15px;line-height:1.55;">{{ cpConfirmPauseText }}</span><div style="display:flex;gap:8px;justify-content:flex-end;"><button onClick="{{ onCpCancelPause }}" style="height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--text);font-size:15px;font-weight:700;cursor:pointer;" style-hover="border-color:var(--accent);">{{ cpConfirmPauseNo }}</button><button onClick="{{ onCpConfirmPause }}" style="height:34px;padding:0 14px;border:none;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-size:15px;font-weight:700;cursor:pointer;" style-hover="filter:brightness(1.1);">{{ cpConfirmPauseYes }}</button></div></div></sc-if>
-            <sc-if value="{{ cpHasNotice }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 14px;border-radius:9px;background:rgba(255,90,90,.12);border:1px solid rgba(255,90,90,.4);color:var(--bad);font-size:15px;">{{ cpNotice }}</div></sc-if>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <sc-if value="{{ cpBubbleHasNext }}" hint-placeholder-val="{{ false }}"><button onClick="{{ onCpBubbleNext }}" style="height:38px;padding:0 16px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:var(--accent);color:var(--accent-ink);" style-hover="filter:brightness(1.1);">{{ cpBubbleNextLabel }}</button></sc-if>
-              <sc-if value="{{ cpOverlayShowReady }}" hint-placeholder-val="{{ false }}"><button onClick="{{ onCpReady }}" style="height:38px;padding:0 16px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;border:1px solid var(--accent);background:transparent;color:var(--text);" style-hover="background:var(--chip-on);">{{ cpReadyLabel }}</button></sc-if>
-              <sc-if value="{{ cpShowRetryButton }}" hint-placeholder-val="{{ false }}"><button onClick="{{ onCpRetry }}" style="height:38px;padding:0 16px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--text);" style-hover="border-color:var(--accent);">{{ cpRetryLabel }}</button></sc-if>
-            </div>
-            <sc-if value="{{ cpShowHistory }}" hint-placeholder-val="{{ false }}">
-              <div style="display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto;padding-top:4px;">
-                <sc-for list="{{ cpMessages }}" as="m" hint-placeholder-count="0">
-                  <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}"><div style="align-self:flex-end;max-width:85%;background:var(--chip-on);padding:8px 12px;border-radius:12px 12px 4px 12px;font-size:15px;line-height:1.6;">{{ m.text }}</div></sc-if>
-                  <sc-if value="{{ m.isTutor }}" hint-placeholder-val="{{ false }}"><div style="align-self:flex-start;max-width:94%;display:flex;flex-direction:column;gap:2px;background:var(--chrome3);padding:8px 12px;border-left:3px solid {{ m.color }};border-radius:4px 12px 12px 4px;font-size:15px;line-height:1.6;white-space:pre-line;"><span style="font-size:15px;font-weight:700;color:{{ m.color }};">{{ m.label }}</span><span>{{ m.text }}</span></div></sc-if>
-                </sc-for>
-              </div>
-            </sc-if>
-            <!-- 답변 입력·[대화 기록]·[나가기]: 카드 맨 아래 -->
-            <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px;">
-            <sc-if value="{{ cpShowComposer }}" hint-placeholder-val="{{ true }}">
-              <form onSubmit="{{ onCpSend }}" style="display:flex;gap:8px;opacity:{{ cpOverlayInputOpacity }};">
-                <input value="{{ cpInput }}" onChange="{{ onCpInput }}" disabled="{{ cpOverlayInputDisabled }}" placeholder="{{ cpOverlayPlaceholder }}" style="flex:1;min-width:0;height:46px;background:var(--chrome);color:var(--text);border:1px solid var(--line2);border-radius:9px;padding:0 14px;font-size:15px;outline:none;" style-focus="border-color:var(--accent);">
-                <button type="submit" disabled="{{ cpOverlayInputDisabled }}" style="height:46px;padding:0 18px;border-radius:9px;border:none;background:var(--accent);color:var(--accent-ink);font-size:15px;font-weight:700;cursor:pointer;flex:none;" style-hover="filter:brightness(1.1);">{{ cpSendLabel }}</button>
-              </form>
-            </sc-if>
-            <div style="display:flex;gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:12px;">
-              <button onClick="{{ onCpToggleHistory }}" style="height:38px;padding:0 16px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--text);" style-hover="border-color:var(--accent);">{{ cpHistoryLabel }}</button>
-              <span style="flex:1;"></span>
-              <button onClick="{{ onCpExit }}" style="height:38px;padding:0 16px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--text);" style-hover="border-color:var(--bad);color:var(--bad);">{{ cpExitLabel }}</button>
-            </div>
-            </div>
-          </div>
-        </sc-if>
-      </section>
       </sc-if>
       </div>
     </div>
@@ -394,10 +314,7 @@ class Component extends DCLogic {
       this.data = m; this.setState({ processes: m.PROCESSES });
       const { createLearningChat } = await import('../3d-demo/learning-chat.js');
       this.chat = await createLearningChat(this);
-      // 이해도 확인: 3D 화면과 같은 checkpoint-chat.js. 답하는 중에는 학습 채팅을 막는다(lockLearning)
-      const { createCheckpointChat } = await import('../3d-demo/checkpoint-chat.js');
-      this.checkpoint = createCheckpointChat(this); this.checkpoint.refreshAll();
-      import('../3d-demo/cp-character.js').catch(e => console.warn('[cp-character] 불러오지 못함', e));
+      // AI 튜터는 학습 전용이다. 평가는 /exam에서 별도로 진행한다.
       this.forceUpdate();
     });
     fetch('/api/status').then(r => r.ok ? r.json() : null).then(s => this.setState({ ai: s && s.connected ? 'ok' : 'off' }), () => this.setState({ ai: 'off' }));
@@ -452,9 +369,7 @@ class Component extends DCLogic {
     }));
     const P = S.processes.find(x => x.id === S.processId), E = P?.equipment.find(x => x.id === S.selectedId);
     const chat0 = this.chat ? this.chat.vals(this.data) : { messages: [], chips: [], input: '', onInput: () => {}, send: e => e.preventDefault(), pending: false };
-    const chat = this.checkpoint ? this.checkpoint.lockLearning(chat0) : chat0;
-    const cp = this.checkpoint ? this.checkpoint.vals() : { cpShowOverlay: false };
-    const cpSections = this.checkpoint ? S.processes.map(x => ({ num: x.num, name: x.name, ...this.checkpoint.sectionBadge(x.id) })) : [];
+    const chat = chat0;
     return {
       srcLabel: D ? 'DB 데이터' : S.error ? '연결 오류' : '불러오는 중',
       srcColor: D ? 'var(--ok)' : S.error ? 'var(--bad)' : 'var(--muted)',
@@ -469,10 +384,7 @@ class Component extends DCLogic {
       aiLabel: S.ai === 'ok' ? 'AI 연결됨' : S.ai === 'off' ? 'AI 연결 안 됨' : '확인 중',
       tutorContext: P ? `지금 보는 화면: ${P.name}${E ? ` · ${E.name}` : ''}` : '설비를 고르면 그 설비 기준으로 답해요',
       focusTutor: () => this.openTutor(),
-      // ASK / LEARN 전환: 고른 쪽 하나만 보인다. [멈추고 질문하기]는 openTutor()로 ASK를 연다
-      showAsk: S.sideTab === 'ask', showLearn: S.sideTab === 'learn',
-      sideTabs: [['ask', 'ASK', 'AI 튜터'], ['learn', 'LEARN', '이해도 확인']].map(([k, label, sub]) => { const on = S.sideTab === k;
-        return { label, sub, on, bg: on ? 'var(--accent)' : 'transparent', color: on ? 'var(--accent-ink)' : 'var(--muted)', onClick: () => this.setState({ sideTab: k }) }; }),
+      showAsk: true,
       processId: S.processId, selectedAttr: S.selectedId || '', chatRef: this.chatRef,
       // 학습 모듈 탭과 설계도·필기
       moduleTabs: [['steps', '작동 단계'], ['blueprint', '설계도·필기']].map(([k, label]) => { const on = S.moduleTab === k;
@@ -489,7 +401,6 @@ class Component extends DCLogic {
       tutorStatus: S.ai === 'off' ? 'AI 연결 안 됨' : P ? `${P.name}${E ? ` · ${E.name}` : ''}` : '설비를 고르면 그 기준으로 답해요',
       tutorStatusColor: S.ai === 'off' ? 'var(--bad)' : 'var(--muted)',
       cantSend: S.pending || !(chat.input || '').trim(), sendOpacity: S.pending || !(chat.input || '').trim() ? '.4' : '1',
-      ...cp, cpIdle: !cp.cpShowOverlay, cpSections,
       input: chat.input, onInput: chat.onInput, send: chat.send,
       // 아래 내 기록(폴더형 탭): 학습 현황 · 다시 볼 개념(수) · 내 오개념(미해결 수)
       recordTabs: [['progress', '내 학습 현황', null], ['review', '다시 볼 개념', D ? reviews.length : null], ['mis', '내 오개념', D ? open : null]].map(([k, label, n]) => ({
