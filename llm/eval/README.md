@@ -33,6 +33,23 @@
 - 질문 은행이 있는 개념: 은행 질문(첫 질문·재확인)마다 말투 다듬기를 `--polish-count`(기본 3)회 돌려, 원문 유출, 다듬은 결과와 그 유출(완화·엄격 4글자), 실제로 쓴 문장(다듬은 문장, 또는 유출로 원문)을 표로 적는다. '의미 변경' 열(다듬으면서 묻는 내용이 바뀌었는지)은 사람이 채운다.
 - 은행이 빈 개념(대체 경로): 개념마다 LLM 질문을 `--count`(기본 10)개 만들어 처리(통과·재생성·대체)를 적는다. 유출 검사에 걸린 질문은 시도별 문장과 걸린 표현(정답 용어, 근거 문장 구)을 따로 표로 적는다. '범위 초과' 열(핵심 요소만으로 답할 수 없는 질문인지)은 사람이 채운다.
 
+## 보충학습 시나리오
+
+`npm run eval:supplement [-- --dry-run] [--resume] [--only id] [--records 파일]`
+
+- 세트는 `supplement/ironmaking.jsonl`이다. 필드:
+  - `concept_id`
+  - `memo`: 시작 전 학습 메모 오개념, 없으면 null
+  - `retry`: 체크포인트 재도전 개념
+  - `answers`: 확인 문제에 낼 답 1~2개
+  - `expect`: `outcome` resolved|not_resolved, `quizzes` 1|2
+  - `dry_verdicts`: --dry-run 판정
+- 판정 항목(실행 기록 기준):
+  - 결과, 확인 문제 수, 도구 거절·실패 없음
+  - 설비 보여 주기, 근거 있는 설명, 은행 문장 아님, 학습 메모 처리
+- 보고서에는 확인 문제의 고정 문장 비율·유출과 걸린 시간을 함께 적는다. 설계는 `docs/supplementary-learning.md`에 있다.
+- 기본은 실제 Gemini(유료)다. `--dry-run`은 가짜 모델로 엔진 흐름만 확인한다(비용 없음, `backend/test/supplement-eval.test.ts`가 npm test에서 돌린다).
+
 ## 긴 실행: 결과 기록, 이어 하기, 연결 재시도
 
 두 스크립트(`eval:evaluator`, `eval:questions`) 공통.
