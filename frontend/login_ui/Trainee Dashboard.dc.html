@@ -62,6 +62,8 @@
     .side { display: flex; flex-direction: column; gap: 14px; min-width: 0; min-height: 0; padding: 19px 0; }
     .side > .card { flex: 1 1 0; min-height: 0; }
     .tutor { display: flex; flex-direction: column; }
+    /* 포석호(<cp-character>, 튜터 패널 머리): 기본 220×260 대신 x-import의 style이 정한 상자(감싸는 div)를 채운다. 흰 몸이 라이트 테마 카드에 묻히지 않게 은은한 타일을 깐다 */
+    .tutor cp-character { display: block; width: 100%; height: 100%; background: var(--panel2); border-radius: 14px; }
     /* 학습 모듈: 탭(작동 단계 / 설계도·필기) + 내용 */
     .module { display: flex; flex-direction: column; gap: 10px; min-width: 0; position: relative; z-index: 3; } /* 설비 미리보기 창이 오른쪽 AI 튜터 열 위에 뜨게 */
     @keyframes blink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
@@ -143,8 +145,13 @@
       <sc-if value="{{ showAsk }}" hint-placeholder-val="{{ true }}">
       <!-- AI 튜터: 인스타그램 DM처럼(이름·상태 머리, 왼쪽 회색/오른쪽 그라데이션 말풍선, 연속 말풍선 묶음, 입력 중 점, 알약 입력창) -->
       <aside class="card tutor" aria-label="AI 튜터" style="padding:0;overflow:hidden;">
-        <div data-al="head" style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);box-sizing:border-box;flex:none;">
-          <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><strong style="font-size:15px;">AI 튜터</strong><span style="font-size:13px;color:{{ tutorStatusColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ tutorStatus }}</span></span>
+        <!-- 머리: 포석호(튜터 캐릭터, cp-character.js) · 이름과 상태 · 효과음 켜기/끄기. alignSide()가 높이를 2D 모듈 탭 줄에 맞추지만(약 56px) 캐릭터가 들어가게 min-height로 받친다 -->
+        <div data-al="head" style="display:flex;align-items:center;gap:12px;min-height:129px;padding:8px 14px 8px 12px;border-bottom:1px solid var(--line);box-sizing:border-box;flex:none;">
+          <!-- 크기는 이 x-import의 style(감싸는 상자)로 정하고 위 .tutor cp-character 규칙이 상자를 채운다. 한 자리에 한 개만 두어 다시 그릴 때 같은 엘리먼트를 쓴다(WebGL 컨텍스트가 쌓이지 않게) -->
+          <x-import component-from-global-scope="cp-character" motion="{{ tutorMotion }}" model="/3d-demo/models/character/tutor.glb" hint-size="96,112" style="width:96px;height:112px;"></x-import>
+          <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><strong style="font-size:15px;">{{ tutorName }}</strong><span style="font-size:13px;color:{{ tutorStatusColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">AI 튜터 · {{ tutorStatus }}</span></span>
+          <!-- 포석호 효과음(보충학습에서 맞히거나 틀릴 때 짧은 소리) 켜기·끄기. 지원하지 않는 브라우저에서는 숨긴다 -->
+          <sc-if value="{{ tutorSfxSupported }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onToggleTutorSfx }}" title="보충학습에서 맞히거나 틀릴 때 포석호가 짧게 소리를 내요" style="flex:none;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;" style-hover="background:var(--panel2);">{{ tutorSfxLabel }}</button></sc-if>
         </div>
         <div ref="{{ chatRef }}" data-al="chat" style="flex:1 1 0;min-height:0;overflow-y:auto;padding:16px 14px 10px;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:var(--line) transparent;">
           <sc-for list="{{ messages }}" as="m" hint-placeholder-count="0">
@@ -317,6 +324,8 @@ class Component extends DCLogic {
       // AI 튜터는 학습 전용이다. 평가는 /exam에서 별도로 진행한다.
       this.forceUpdate();
     });
+    // 튜터 패널 머리의 포석호 <cp-character>(x-import가 등록을 기다린다)
+    import('../3d-demo/cp-character.js').catch(e => console.warn('[cp-character] 불러오지 못함', e));
     fetch('/api/status').then(r => r.ok ? r.json() : null).then(s => this.setState({ ai: s && s.connected ? 'ok' : 'off' }), () => this.setState({ ai: 'off' }));
     // 2D 모듈에서 공정·설비를 고르면 튜터 질문의 화면 정보(process_id·equipment_id)가 따라간다
     document.addEventListener('process-select', e => { const d = e.detail || {}; if (d.process) this.setState({ processId: d.process, selectedId: d.id || null }); });
@@ -400,6 +409,8 @@ class Component extends DCLogic {
       // 이름 아래: 지금 답하는 기준(공정·설비). AI가 끊겼을 때만 그 사실을 빨간 글씨로
       tutorStatus: S.ai === 'off' ? 'AI 연결 안 됨' : P ? `${P.name}${E ? ` · ${E.name}` : ''}` : '설비를 고르면 그 기준으로 답해요',
       tutorStatusColor: S.ai === 'off' ? 'var(--bad)' : 'var(--muted)',
+      // 포석호(튜터 캐릭터): 이름·동작 이름표·효과음 토글은 learning-chat.js의 vals(). 채팅을 아직 못 붙였으면 대기 동작
+      tutorName: chat.tutorName || '포석호', tutorMotion: chat.tutorMotion || 'idle', tutorSfxSupported: !!chat.tutorSfxSupported, tutorSfxLabel: chat.tutorSfxLabel || '', onToggleTutorSfx: chat.onToggleTutorSfx || (() => {}),
       cantSend: S.pending || !(chat.input || '').trim(), sendOpacity: S.pending || !(chat.input || '').trim() ? '.4' : '1',
       input: chat.input, onInput: chat.onInput, send: chat.send,
       // 아래 내 기록(폴더형 탭): 학습 현황 · 다시 볼 개념(수) · 내 오개념(미해결 수)
