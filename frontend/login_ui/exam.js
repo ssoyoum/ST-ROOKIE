@@ -57,7 +57,7 @@ function renderTrail(job) {
   }
   $('forge-steps').replaceChildren(...trail.phases.map((phase, i) => {
     const last = i === trail.phases.length - 1, item = el('li', last ? 'now' : 'done');
-    if (last) item.append(el('i')); else item.append(document.createTextNode('✓ '));
+    if (last) { item.setAttribute('aria-current', 'step'); item.append(el('i')); } else item.append(document.createTextNode('✓ '));
     item.append(document.createTextNode(STEP_LABEL[phase]));
     return item;
   }));

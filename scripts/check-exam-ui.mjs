@@ -36,6 +36,7 @@ try {
   await page.screenshot({ path: 'docs/screenshots/exam/loading-mobile.png' });
   await page.getByRole('button', { name: '요청 취소', exact: true }).click();
   await page.waitForFunction(() => !document.querySelector('#forge').open, { timeout: 20000 });
+  assert.equal(await page.locator('#forge').evaluate((n) => getComputedStyle(n).display), 'none', 'closed forge dialog stays hidden (exam.css overrides the UA display rule)');
   assert.match(await page.locator('#notice').textContent(), /취소/);
   assert.ok(commandJob);
   const job = await context.request.get(`${base}/api/exam-jobs/${commandJob.id}`, { headers: { Authorization: `Bearer ${token}` } });

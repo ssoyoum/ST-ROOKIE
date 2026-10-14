@@ -208,7 +208,8 @@ h1 { font-family: var(--font-en); font-weight: 800; font-size: clamp(36px, 5.4vw
 /* 담금질 로딩 화면: 학습 기록 체계의 카드(둥근 18px · 선 1px · --folder 바탕)를 흐린 페이지 위 가운데에 띄운다.
    망치·모루·달군 쇠 그림과 동작은 그대로 두고 색만 토큰으로 맞춘다(쇠는 회색, 달군 쇠·불꽃은 --mid 계열 호박색). */
 .forge-screen { --forge-heat: #e8c25a; --forge-heat-hi: #f7dd8c; --forge-anvil: #2b2b2f; --forge-steel-a: #8e8e93; --forge-steel-b: #f2f2f2; --forge-steel-c: #6b6b70; --forge-handle: #a1a1a6; --forge-handle-hi: #d4d4d8; --forge-glow: .22;
-  border: none; margin: 0; padding: 20px; max-width: none; max-height: none; width: 100vw; height: 100dvh; background: transparent; color: var(--text); overflow: auto; font-family: var(--font-ko); letter-spacing: -0.01em; display: grid; place-items: center; }
+  border: none; margin: 0; padding: 20px; max-width: none; max-height: none; inset: 0; width: auto; height: auto; background: transparent; color: var(--text); overflow: auto; font-family: var(--font-ko); letter-spacing: -0.01em; display: grid; place-items: center; }
+/* 위 display:grid가 브라우저 기본 규칙 dialog:not([open]){display:none}을 이기므로, 닫힌 화면은 여기서 다시 숨긴다 */
 .forge-screen:not([open]) { display: none; }
 .forge-screen::backdrop { background: rgba(28, 28, 28, .78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 body[data-theme="light"] .forge-screen { --forge-heat: #e0a62f; --forge-heat-hi: #f3cf6d; --forge-anvil: #3a3a40; --forge-steel-a: #9a9aa0; --forge-steel-b: #ffffff; --forge-steel-c: #6b6b71; --forge-handle: #8c8c92; --forge-handle-hi: #c9c9ce; --forge-glow: .14; }
