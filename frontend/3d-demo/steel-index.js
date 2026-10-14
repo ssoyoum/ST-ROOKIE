@@ -187,6 +187,10 @@ $('icHome').src = icon('home', '#111111', 1.8); $('btnHome').classList.add('on')
 $('icClose').src = icon('close', '#e6ebf1', 1.8); $('btnClose').onclick = () => leaveStep();
 $('icBot').src = icon('bot', '#e6ebf1', 1.6); $('btnTutor').onclick = () => (panel === 'tutor' ? closePanel() : openTutor());
 $('icUser').src = icon('user', '#e6ebf1', 1.6); $('btnUser').onclick = () => { location.href = '/login'; };
+// 로그아웃: 로그아웃 API는 없다(JWT, docs/auth-api.md). 토큰이 있을 때만 보이고, 누르면 이 브라우저의 토큰과 이어 보던 학습 대화 id를 지우고 홈으로 간다(steel-intro.html과 같음).
+$('icLogout').src = icon('logout', '#e6ebf1', 1.6);
+{ let hasToken = false; try { hasToken = !!(localStorage.getItem('st-rookie-token') || sessionStorage.getItem('st-rookie-token')); } catch (e) {} $('btnLogout').hidden = !hasToken; }
+$('btnLogout').onclick = () => { for (const s of [localStorage, sessionStorage]) { try { s.removeItem('st-rookie-token'); } catch (e) {} } try { sessionStorage.removeItem('st-rookie:learning-session'); } catch (e) {} location.href = '/'; };
 $('btnView3d').onclick = () => setView('3d'); $('btnViewPlan').onclick = () => setView('plan');
 const tabs = $('tabs');
 procs.forEach((p) => { const b = document.createElement('button'); b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', 'false'); b.innerHTML = `<code>${p.data.num}</code>${p.data.name}`; b.onclick = () => show(p); p.tab = b; tabs.appendChild(b); });
