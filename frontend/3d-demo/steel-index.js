@@ -8,7 +8,7 @@
 //     미해결 체크포인트 오개념 → learn-hud-state.js의 개념→설비 표). 실제 값만 보여 주고, 로그인 전에는 안내 문구를 둔다.
 // 설비 보기: 하단 점·3D 클릭(설비를 짚으면 그 설비, 그 밖은 다음 설비)·← →. 선택한 설비는 바닥의 시안 링으로 감싸고 나머지 설비는 색을 낮춘다. 전체 보기(공정만)에서는 설비 UI를 띄우지 않는다.
 // 평면 보기: 같은 장면을 위에서 내려다보는 직교 카메라. 설비 번호 핀을 모두 보여 준다(도면처럼). 외관으로 돌아오면 원래 시점.
-// 튜터: learning-chat.js(createLearningChat)를 그대로 쓴다(POST /api/chat, 로그인 토큰). 페이지 컴포넌트 대신 작은 어댑터(state·setState·scene()·goProcess)를 넘긴다.
+// AI questions are handled in My Page; this process view only displays equipment and steps.
 // 수치는 data_v2.js와 서버 응답에서만 가져온다. 꾸며 낸 실시간 값은 쓰지 않는다. prefers-reduced-motion이면 솟아오르기·글자 연출·자전 없이 바로 놓는다.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/+esm';
@@ -19,7 +19,6 @@ import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/
 import { UnrealBloomPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js/+esm';
 import { OutputPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/OutputPass.js/+esm';
 import * as DATA from './data_v2.js';
-import { createLearningChat } from './learning-chat.js';
 import { createApiClient } from './api-client.js';
 import { conceptStatuses, equipmentStatuses, groupBySection } from './learn-hud-state.js';
 import { icon, stepIcon, parseTemp, heatOf } from './steel-index-ui.js';
@@ -185,8 +184,7 @@ function renderProg(p) { // 학습 현황을 벽 대시보드로 보낸다
 // ---- 상단 알약 바 --------------------------------------------------------------------------------------
 $('icHome').src = icon('home', '#111111', 1.8); $('btnHome').classList.add('on'); $('btnHome').onclick = () => { location.href = '/login_ui/home-sleek.html'; };
 $('icClose').src = icon('close', '#e6ebf1', 1.8); $('btnClose').onclick = () => leaveStep();
-$('icBot').src = icon('bot', '#e6ebf1', 1.6); $('btnTutor').onclick = () => (panel === 'tutor' ? closePanel() : openTutor());
-$('icUser').src = icon('user', '#e6ebf1', 1.6); $('btnUser').onclick = () => { location.href = '/login'; };
+$('icUser').src = icon('user', '#e6ebf1', 1.6); $('btnUser').onclick = () => goMyPage();
 // 로그아웃: 로그아웃 API는 없다(JWT, docs/auth-api.md). 토큰이 있을 때만 보이고, 누르면 이 브라우저의 토큰과 이어 보던 학습 대화 id를 지우고 홈으로 간다(steel-intro.html과 같음).
 $('icLogout').src = icon('logout', '#e6ebf1', 1.6);
 { let hasToken = false; try { hasToken = !!(localStorage.getItem('st-rookie-token') || sessionStorage.getItem('st-rookie-token')); } catch (e) {} $('btnLogout').hidden = !hasToken; }
@@ -213,23 +211,22 @@ function closePanel() { panel = null; right.classList.remove('on'); right.innerH
 function openPanel(kind) { panel = kind; right.classList.add('on'); document.body.classList.add('panel'); renderPanel(); }
 function renderPanel() {
   if (!panel || !cur) return;
-  if (panel === 'tutor') return renderTutor();
   const e = curEq; if (!e) return closePanel();
   const d = e.data;
   if (panel === 'eq') {
     section.hide(); clearInterval(typer);
     const steps = (d.steps || []).map((s, i) => `<button data-i="${i}"><span class="tile"><img class="ic" width="30" height="30" alt="" src="${icon(stepIcon(s.zone), '#dfe5ec', 1.5)}"></span><span><span class="zone"><span>${esc(s.zone)}</span>${s.temp ? `<code>${esc(s.temp)}</code>` : ''}</span><span class="tx">${esc(s.text)}</span></span></button>`).join('');
-    right.innerHTML = `<div class="scroll">
+    right.innerHTML = `<div class="panel-head">
         <span class="eyebrow">${cur.data.num} · ${esc(cur.data.name)}</span><h1>${esc(d.name)}</h1>
-        <button class="x" id="pxClose" title="닫기" aria-label="닫기"><img class="ic" width="22" height="22" alt="" src="${icon('close', '#e6ebf1', 1.8)}"></button>
+        <button class="x" id="pxClose" title="닫기" aria-label="닫기"><img class="ic" width="22" height="22" alt="" src="${icon('close', '#e6ebf1', 1.8)}"></button></div><div class="scroll">
         <h2>역할</h2><p>${esc(d.role || '')}</p>
         ${d.input || d.output ? `<div class="io"><div><small>들어오는 소재</small><b>${esc(d.input || '-')}</b></div><span>→</span><div><small>나가는 소재</small><b>${esc(d.output || '-')}</b></div></div>` : ''}
         ${(d.notes || []).length ? `<h2>알아 두기</h2>${d.notes.map((n) => `<p class="note"><i>—</i><span>${esc(n)}</span></p>`).join('')}` : ''}
         ${steps ? `<h2>단계별 설명 · ${d.steps.length}단계</h2><div class="steps">${steps}</div>` : ''}
       </div>
-      <div class="foot"><button id="askEq"><img class="ic" width="22" height="22" alt="" src="${icon('bot', '#e6ebf1', 1.6)}">튜터에게 묻기</button>${steps ? `<button class="primary" id="openSteps">단계 보기</button>` : ''}</div>`;
+      <div class="foot"><button id="askEq"><img class="ic" width="22" height="22" alt="" src="${icon('bot', '#e6ebf1', 1.6)}">마이페이지에서 질문</button>${steps ? `<button class="primary" id="openSteps">단계 보기</button>` : ''}</div>`;
     $('pxClose').onclick = () => closePanel();
-    $('askEq').onclick = () => { openTutor(); chat?.ask(`${d.name}은(는) 어떤 역할을 하나요?`); };
+    $('askEq').onclick = () => goMyPage();
     $('openSteps')?.addEventListener('click', () => { stepIdx = 0; openPanel('steps'); });
     right.querySelectorAll('.steps button').forEach((b) => { b.onclick = () => { stepIdx = +b.dataset.i; openPanel('steps'); }; });
     return;
@@ -270,33 +267,11 @@ function renderPanel() {
 }
 
 // ---- AI 튜터(learning-chat.js 어댑터) --------------------------------------------------------------------------
-const page = {
-  state: { processId: 'ironmaking', selectedId: null, messages: [], input: '', pending: false, lastReq: null, lastRes: null, lastResults: [], speed: 1, tutorOpen: false, devOpen: false },
-  setState(u) { Object.assign(page.state, typeof u === 'function' ? u(page.state) : u); if (panel === 'tutor') renderTutor(); else if (page.state.messages.length && page.state.messages[page.state.messages.length - 1].role === 'assistant' && !page.state.pending) $('btnTutor').classList.add('unread'); },
-  data: DATA, chatRef: { current: null },
-  scrollChat() { requestAnimationFrame(() => { const el = $('chatBox'); if (el) el.scrollTop = el.scrollHeight; }); },
-  scene: () => sceneFacade, goProcess: (id) => { const p = procs.find((q) => q.id === id); if (p) show(p); },
-};
-const sceneFacade = { localName: 'steel-scene', get process() { return cur ? { id: cur.id } : null; }, focus(id) { const e = cur?.eqs.find((q) => q.id === id); if (!e || !e.up) return false; enterStep(e, false); return true; }, play() { startTour(); return !!tour; } };
-let chat = null;
-createLearningChat(page).then((c) => { chat = c; if (panel === 'tutor') renderTutor(); });
-function openTutor() { page.state.tutorOpen = true; $('btnTutor').classList.remove('unread'); openPanel('tutor'); page.scrollChat(); }
-function renderTutor() {
-  const v = chat?.vals(DATA) || { messages: [], chips: [], input: '', pending: false };
-  const msgs = v.messages.map((m) => m.isUser ? `<div class="msg user">${esc(m.text)}</div>`
-    : m.isSafety ? `<div class="msg safety">${esc(m.text)}</div>`
-    : m.evidence === 'error' ? `<div class="msg err"><img class="ic" width="24" height="24" alt="" src="${icon('alert', '#f5b13d', 1.6)}"><span>답변을 받지 못했어요 · ${esc(m.text)}</span></div>`
-    : `<div class="msg ai"><div class="b">${esc(m.text)}</div>${(m.citations || []).map((c) => `<span class="cite">근거 · ${esc(c.title)}</span>`).join('')}${m.hasFollowUp ? `<button class="fu" data-fu="1"><span style="font-size:15px;color:var(--muted)">이어서 물어보기</span><span>${esc(m.followUp)}</span></button>` : ''}</div>`).join('');
-  right.innerHTML = `<div class="tutorhead"><div style="flex:1"><h1>AI 튜터</h1><small>${cur ? `${cur.data.num} ${esc(cur.data.name)}${curEq ? ` · ${esc(curEq.data.name)}` : ''} 화면을 보고 답해요` : '궁금한 것을 물어보세요'}</small></div><button class="x2" id="tClose" title="닫기" aria-label="닫기"><img class="ic" width="22" height="22" alt="" src="${icon('close', '#e6ebf1', 1.8)}"></button></div>
-    <div class="chat" id="chatBox">${msgs}${v.pending ? '<div class="typing"><i></i><i></i><i></i></div>' : ''}
-      <div class="chiphead">추천 질문<i></i></div><div class="chips">${(v.chips || []).map((c, i) => `<button data-chip="${i}">${esc(c.text)}</button>`).join('')}</div></div>
-    <form class="send" id="sendForm"><input id="chatInput" value="${esc(v.input || '')}" placeholder="${cur ? `${esc(cur.data.name)} 공정에 대해 물어보세요` : '질문을 입력하세요'}" autocomplete="off" aria-label="튜터에게 질문"><button type="submit">보내기</button></form>`;
-  $('tClose').onclick = () => closePanel();
-  right.querySelectorAll('[data-chip]').forEach((b) => { b.onclick = () => v.chips[+b.dataset.chip].onClick(); });
-  right.querySelectorAll('[data-fu]').forEach((b, i) => { const ms = v.messages.filter((m) => m.hasFollowUp); b.onclick = () => ms[i]?.askFollowUp(); });
-  const input = $('chatInput'); input.oninput = (e) => { page.state.input = e.target.value; };
-  $('sendForm').onsubmit = (e) => { e.preventDefault(); const t = input.value.trim(); if (!t) return; page.state.input = t; chat?.ask(t); };
-  page.scrollChat();
+function goMyPage() {
+  const query = new URLSearchParams();
+  if (cur) query.set('p', cur.id);
+  if (curEq) query.set('equipment', curEq.id);
+  location.assign('/login_ui/My%20Page.dc.html' + (query.size ? '?' + query : ''));
 }
 
 // ---- 설비 칩(3D 위). 외관: 지금 설비 하나, 평면: 모든 설비 번호 -----------------------------------------------------
@@ -318,9 +293,9 @@ async function show(p, replay = false) {
   stopTour();
   if (cur && cur !== p) await sink(cur);
   if (cur === p && !replay) return;
-  cur = p; curEq = null; mode = 'overview'; page.state.processId = p.id; page.state.selectedId = null;
+  cur = p; curEq = null; mode = 'overview';
   procs.forEach((q) => { q.tab.classList.toggle('on', q === p); q.tab.setAttribute('aria-selected', String(q === p)); });
-  renderTrack(p); if (panel !== 'tutor') closePanel(); else renderTutor(); clearDim(p); loadProgress(p);
+  renderTrack(p); closePanel(); clearDim(p); loadProgress(p);
   const { w, d, cx, cz } = p.foot;
   glow.position.set(cx, 0.12, cz); glow.scale.set(w + 9, d + 9, 1);
   plan.cx = cx; plan.cz = cz; plan.half = Math.max(w, d * 1.3) * 0.62;
@@ -346,7 +321,7 @@ function enterStep(e, userAct = true) {
   if (!cur || !e || !e.up || sinking) return;
   if (userAct && tour) stopTour();
   if (curEq !== e) section.hide();
-  mode = 'step'; curEq = e; page.state.selectedId = e.id; stepIdx = 0; cur.seen.add(e.id);
+  mode = 'step'; curEq = e;  stepIdx = 0; cur.seen.add(e.id);
   if (tour) tour.t0 = performance.now();
   openPanel(tour ? 'steps' : 'eq');
   renderProg(cur); stage3d.setEquipment(e); syncUi();
@@ -357,7 +332,7 @@ function enterStep(e, userAct = true) {
   if (view === '3d') animateTo({ yaw: orbit.yaw, pitch: 0.34, dist: Math.max(14, Math.max(s.x, s.z, s.y) * 2.4), target: new THREE.Vector3(c.x - s.x * 0.15, c.y, c.z) }, 1200);
 }
 function step(dir, userAct = true) { if (!cur) return; const n = cur.eqs.length, i = curEq ? (curEq.i + dir + n) % n : (dir > 0 ? 0 : n - 1); enterStep(cur.eqs[i], userAct); }
-function leaveStep() { if (!cur) return; stopTour(); mode = 'overview'; curEq = null; page.state.selectedId = null; clearDim(cur); if (panel !== 'tutor') closePanel(); renderProg(cur); stage3d.setEquipment(null); syncUi(); if (view === '3d') animateTo(home, 1100); }
+function leaveStep() { if (!cur) return; stopTour(); mode = 'overview'; curEq = null;  clearDim(cur); closePanel(); renderProg(cur); stage3d.setEquipment(null); syncUi(); if (view === '3d') animateTo(home, 1100); }
 function syncUi() {
   const stepping = mode === 'step' && !!curEq;
   cur?.eqs.forEach((e) => { e.dot?.classList.toggle('cur', e === curEq); e.dot?.classList.toggle('done', stepping && e.i < curEq.i); if (e.tag) { const showTag = view === 'plan' ? e.up : stepping && e === curEq; e.tag.style.opacity = showTag ? '1' : '0'; e.tag.querySelector('.nm').style.display = view === 'plan' && e !== curEq ? 'none' : ''; e.tag.querySelector('.k').style.padding = view === 'plan' && e !== curEq ? '5px' : '7px 12px 7px 7px'; e.tag.querySelector('.ld').style.display = view === 'plan' ? 'none' : ''; } });
@@ -372,7 +347,7 @@ function setView(v) {
   if (v === '3d') animateTo(curEq ? { yaw: orbit.yaw, pitch: 0.34, dist: orbit.dist, target: orbit.target.clone() } : home, 900);
   syncUi();
 }
-addEventListener('keydown', (e) => { if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return; if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'Escape') { if (panel === 'tutor') closePanel(); else leaveStep(); } else { const n = parseInt(e.key, 10); if (n >= 1 && n <= procs.length) show(procs[n - 1]); } });
+addEventListener('keydown', (e) => { if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return; if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'Escape') { if (panel) closePanel(); else leaveStep(); } else { const n = parseInt(e.key, 10); if (n >= 1 && n <= procs.length) show(procs[n - 1]); } });
 
 // ---- 카메라·입력 --------------------------------------------------------------------------------------
 let anim = null, drag = null, hot = null;
@@ -461,5 +436,5 @@ fetch('models/anchors-v2b.json').then((r) => (r.ok ? r.json() : {})).catch(() =>
   if (failed.length) toast(`${failed.map((p) => p.data.name).join('·')} 모델을 불러오지 못해 탭을 닫아 두었어요`, 5000);
   const q = new URLSearchParams(location.search), first = procs.find((p) => p.id === q.get('p') && p.loaded) || procs.find((p) => p.loaded);
   requestAnimationFrame(frame);
-  if (first) setTimeout(() => { show(first); if (q.get('tutor')) openTutor(); }, 250);
+  if (first) setTimeout(() => { show(first); }, 250);
 });

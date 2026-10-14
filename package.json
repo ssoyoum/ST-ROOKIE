@@ -9,6 +9,7 @@
     "build": "tsc --noEmit false --outDir .build",
     "start": "npm run build && node --env-file-if-exists=.env .build/backend/src/ironmaking-server.js",
     "start:ollama": "npm run build && node --env-file-if-exists=.env scripts/start-ollama.mjs",
+    "start:gemini": "npm run build && node --env-file-if-exists=.env scripts/start-gemini.mjs",
     "chat:ollama": "npm run build && node --env-file-if-exists=.env .build/llm/eval/ask-ollama.js",
     "eval:ollama": "npm run build && node --env-file-if-exists=.env .build/llm/eval/run-ollama.js",
     "test:ollama-checkpoint": "npm run build && node --env-file-if-exists=.env .build/llm/eval/run-ollama.js --mode checkpoint",

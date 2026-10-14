@@ -5,6 +5,8 @@
 커밋 메시지 규칙은 [agent.md](agent.md)를 따른다.
 보고는 한국어로 한다.
 
+시연 개편(2026-10-14): `npm run start:gemini`를 사용한다. `steel-index.html`의 자유 질문 AI 튜터는 제거하고 마이페이지에 집중했다. 공정 화면의 질문 버튼은 선택한 공정·설비를 마이페이지로 전달한다. 학습자 대시보드는 모듈 높이에 강제로 맞추지 않고 대화 영역만 스크롤하며 입력창을 고정한다. 미통과 포석호는 웃음/축하 점프 없이 아쉬운 표정이다. 이슈 #140~#143, 변경과 검증은 [docs/demo-gemini-layout.md](docs/demo-gemini-layout.md)를 확인한다.
+
 평가 시험(2026-10-14): 학습자 응시는 `/exam`(`frontend/login_ui/exam.html`·`exam.js`·`exam.css`)에서 한다. 마이페이지 AI 튜터 패널의 시험 UI는 뺐고, 3D 화면(v4)의 체크포인트 링크는 `/exam`으로 간다. 시험 작업(대기열·취소·중복 제출 방지)·채점 이력·복습 일정·교육 그룹·자료 검수 API는 `backend/src/education/`, 마이그레이션은 `010_education_workflow.sql`이다. 동작과 범위는 [docs/exam-page.md](docs/exam-page.md)를 먼저 읽는다. 화면은 학습 기록(`Trainee Dashboard.dc.html`)과 같은 디자인 체계이고, 시험 패널과 AI 튜터 패널 머리(학습 기록·v4)에는 튜터 캐릭터 포석호(`frontend/3d-demo/cp-character.js`)가 있다(동작 규칙은 [docs/checkpoint-overlay.md](docs/checkpoint-overlay.md)의 발화 type → 동작 표). 이전 체크포인트 UI(`checkpoint-chat.js`)는 v3·테스트 페이지용으로 남기고, `motionFor`는 `/exam`·`learning-chat.js`가 같이 쓴다.
 작업 시작 전과 커밋 전에 현재 브랜치를 확인한다(`git branch --show-current`). IDE 등에서 브랜치가 바뀌어 커밋이 엉뚱한 브랜치에 쌓인 적이 있다.
 시연 서버가 서빙하는 메인 폴더는 `dev`에 둔다. 작업은 별도 worktree에서 한다(예: `git worktree add -b <브랜치> ../ST-ROOKIE-<작업> origin/dev`). 서버는 실행 폴더의 `frontend/`를 그대로 서빙하므로, 메인 폴더에서 브랜치를 바꾸면 시연 화면도 바뀐다.

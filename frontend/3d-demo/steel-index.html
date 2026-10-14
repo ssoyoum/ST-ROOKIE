@@ -117,33 +117,6 @@
     .stepcard .nav button { flex: 1; height: 40px; border-radius: 999px; border: 1px solid var(--line2); background: transparent; color: var(--text); font: 600 15px/1 var(--f-body); cursor: pointer; }
     .stepcard .nav button:hover { background: var(--chrome3); }
 
-    /* AI 튜터 (v4) */
-    .chat { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px 12px; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; }
-    .msg.user { align-self: flex-end; max-width: 85%; background: var(--chrome4); padding: 10px 13px; border-radius: 12px 12px 4px 12px; font: 400 15px/1.5 var(--f-body); }
-    .msg.ai { align-self: flex-start; max-width: 94%; display: flex; flex-direction: column; gap: 8px; }
-    .msg.ai .b { background: var(--chrome3); padding: 10px 13px; border-radius: 12px 12px 12px 4px; font: 400 15px/1.6 var(--f-body); text-wrap: pretty; white-space: pre-wrap; }
-    .msg.ai .cite { font: 400 15px/1.4 var(--f-body); color: var(--muted); padding-left: 4px; }
-    .msg.ai .fu { text-align: left; display: flex; flex-direction: column; gap: 2px; background: transparent; border: 1px dashed var(--accent); border-radius: var(--r-s); padding: 8px 12px; color: var(--text); cursor: pointer; font: 400 15px/1.4 var(--f-body); }
-    .msg.safety { align-self: flex-start; max-width: 92%; background: rgba(255,90,90,.12); border: 1px solid rgba(255,90,90,.4); color: #ffc9c9; padding: 10px 12px; border-radius: 10px; font: 400 15px/1.55 var(--f-body); }
-    .msg.err { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line2); background: var(--chrome3); font: 600 15px/1.4 var(--f-body); }
-    .typing { align-self: flex-start; display: flex; gap: 4px; padding: 12px 14px; background: var(--chrome3); border-radius: 10px; }
-    .typing i { width: 6px; height: 6px; border-radius: 3px; background: var(--muted); animation: blink 1s infinite; } .typing i:nth-child(2) { animation-delay: .2s } .typing i:nth-child(3) { animation-delay: .4s }
-    @keyframes blink { 0%, 100% { opacity: .2 } 50% { opacity: 1 } }
-    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
-    .chips button { min-height: 36px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line2); background: var(--chrome3); color: var(--text); font: 400 15px/1.2 var(--f-body); cursor: pointer; text-align: left; }
-    .chips button:hover { background: var(--chrome4); }
-    .chiphead { display: flex; align-items: center; gap: 10px; margin-top: 6px; font: 600 15px/1 var(--f-body); color: var(--muted); white-space: nowrap; }
-    .chiphead i { flex: 1; height: 1px; background: var(--line2); }
-    form.send { display: flex; gap: 8px; padding: 10px 16px 12px; border-top: 1px solid var(--line); }
-    form.send input { flex: 1; min-width: 0; height: 42px; background: var(--chrome2); color: var(--text); border: 1px solid var(--line2); border-radius: 999px; padding: 0 16px; font: 400 15px/1 var(--f-body); outline: none; }
-    form.send input:focus { border-color: var(--accent); }
-    form.send button { height: 42px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--accent); color: var(--accent-ink); font: 700 15px/1 var(--f-body); cursor: pointer; flex: none; }
-    .tutorhead { display: flex; align-items: flex-start; gap: 10px; padding: 18px 16px 10px; }
-    .tutorhead h1 { margin: 0; font: 900 24px/1.1 var(--f-body); }
-    .tutorhead small { display: block; margin-top: 4px; font: 400 15px/1.4 var(--f-body); color: #c3ccd7; }
-    .tutorhead .x2 { width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: grid; place-items: center; }
-    .tutorhead .x2:hover { background: var(--chrome3); }
-
     /* ---- 하단 재생 바 (불투명) ---- */
     .bar { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 6; display: flex; align-items: center; gap: 16px; height: 74px; padding: 0 22px 0 12px; border-radius: 999px; background: var(--chrome); border: 1px solid var(--line2); max-width: calc(100vw - 20px); }
     body.panel .bar { left: 10px; right: 460px; transform: none; max-width: none; width: auto; justify-content: center; }
@@ -174,6 +147,23 @@
     .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); z-index: 8; padding: 10px 16px; border-radius: 999px; background: var(--chrome); border: 1px solid rgba(245,177,61,.5); color: #ffd58a; font: 500 15px/1.3 var(--f-body); display: none; }
     .toast.on { display: block; }
     @media (prefers-reduced-motion: reduce) { #load, .bar .stop i { transition: none; } }
+
+    /* Keep controls outside the scrollable equipment content. */
+    .top .tabs { min-width: 0; overflow-x: auto; }
+    .top .tabs button, .top .seg button { flex: none; white-space: nowrap; }
+    .top .seg { flex: none; }
+    .right .foot { flex: none; }
+    .right .panel-head { flex: none; padding: 16px 62px 16px 20px; border-bottom: 1px solid var(--line); }
+    .right .panel-head h1 { font-size: 24px; margin-top: 7px; }
+    .stepcard .nav { position: sticky; bottom: 0; padding: 12px 0; background: var(--chrome); }
+    .bar .track { min-width: 0; overflow-x: auto; scrollbar-width: thin; padding: 4px 3px; }
+    .bar .stop { flex: none; }
+    @media (max-width: 760px) {
+      .top { left: 10px; right: 10px; transform: none; max-width: calc(100vw - 20px); }
+      .top .tabs { min-width: 0; overflow-x: auto; }
+      .top .rb { flex: none; width: 36px; height: 36px; }
+      body.panel .bar, .bar { left: 10px; right: 10px; width: auto; transform: none; max-width: none; padding: 0 10px; }
+    }
   </style>
 </head>
 <body>
@@ -187,7 +177,6 @@
     <div class="seg" role="group" aria-label="보기"><button id="btnView3d" class="on" aria-pressed="true">외관</button><button id="btnViewPlan" aria-pressed="false">평면</button></div>
     <button class="rb" id="btnClose" title="설비 보기 끝내기" aria-label="설비 보기 끝내기"><img class="ic" id="icClose" width="20" height="20" alt=""></button>
     <span class="sep"></span>
-    <button class="rb" id="btnTutor" title="AI 튜터" aria-label="AI 튜터"><img class="ic" id="icBot" width="24" height="24" alt=""><span class="dot"></span></button>
     <button class="rb" id="btnTheme" title="라이트 모드로" aria-label="테마 바꾸기"><img class="ic" id="icTheme" width="22" height="22" alt=""></button>
     <button class="rb" id="btnUser" title="마이페이지" aria-label="마이페이지"><img class="ic" id="icUser" width="22" height="22" alt=""></button>
     <button class="rb" id="btnLogout" title="로그아웃" aria-label="로그아웃" hidden><img class="ic" id="icLogout" width="22" height="22" alt=""></button>
