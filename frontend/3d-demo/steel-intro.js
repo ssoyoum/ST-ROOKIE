@@ -1,6 +1,5 @@
 // 첫 화면(밤의 지도 테이블, steel-intro.html). 설계 노트는 저장소 밖에 둔다
-// - 여는 장면: 홈(login_ui/home-sleek.html)과 같은 밤 배경에서 흰 점이 흩어졌다 모여 부지 윤곽·도로와 공정 4개 모양이 되고(MeshSurfaceSampler),
-//   노출이 0 → 1로 오르며 밤의 지도가 드러나고 주황 불빛이 켜진다. 점은 사라진다. 아무 입력이나 [건너뛰기]로 건너뛴다.
+// - 여는 장면(점 구름)과 솟을 때 흙먼지는 뺐다(2026-10-14 요청). 바로 밤의 지도에서 제선부터 솟는다. 제목 카드(제철 공정 지도)는 TITLE_MS 동안만 보이고 사라진다.
 // - 땅: 포항제철소 부지 윤곽(위성 사진 기준, scene_v3.js의 SITE_LAND·SITE_CITY·SITE_ROADS)을 밤 지도처럼 칠한 판. 도로는 외곽선을 먼저 모두 그리고 속을 나중에 그려
 //   교차로가 한 덩어리 십자로 합쳐진다. 공정 사이 레일은 점선.
 // - 밤: 짙은 남색 하늘·바다, 달빛, 주황 불빛(보케: 팔각 원판, 크기·밝기 제각각, 무리 지어 불규칙하게 흩어짐, 초점에서 멀수록 커지고 옅어짐) + 블룸.
@@ -15,7 +14,7 @@
 // - 공정 사이 연결: 구역 아래 둥근 주황 테두리와 같은 주황 선(가운데 선 + 번짐), 모서리는 둥글게. 제선에서 열연까지 다 이어지면 위에서 전체를 보여 주며
 //   선이 세 번 깜빡이고, 그 뒤 밝기를 42%로 낮춘다.
 // - 카메라: 네 구역 전체가 화면에 꼭 차는 거리(overviewPose)보다 멀리 빠지지 않는다. 지도 버튼은 그 시점으로 간다. 앞 구역 오른쪽 변에서 나와 돌아 내려가 다음 구역 왼쪽 변으로 들어간다(구역 경계로 경로를 만든다).
-// - 공정 구역: 제선 → 제강 → 연주 → 열연이 1·2·3·4 순서로 땅에서 솟는다(받침 없음, 지역 클리핑으로 땅 위만 그림). 구역 둘레 주황 발광 테두리, 지금 구역은 15% 물결.
+// - 공정 구역: 제선 → 제강 → 연주 → 열연이 1·2·3·4 순서로 땅에서 솟는다(받침 없음, 지역 클리핑으로 땅 위만 그림). 구역 둘레 발광 테두리·연결선·투광등·물결은 노랑~주황 불빛(0xffa63d·0xffb352·0xffcc66, 2026-10-14 요청), 지금 구역은 15% 물결.
 // - 칩(번호·이름·[들어가기])과 흐름 라벨은 한꺼번에 띄우지 않는다: 구역이 솟을 때 3초만 보이고, 그 구역(또는 칩)에 마우스를 올리면 다시 보인다.
 // - 진행: ▶/⏸, [다음 공정], ← →, 숫자 키, Space. Enter = 지금 구역 들어가기. 수치는 data_v2.js에서만.
 
@@ -27,7 +26,6 @@ import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/
 import { BokehPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/BokehPass.js/+esm';
 import { UnrealBloomPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js/+esm';
 import { OutputPass } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/OutputPass.js/+esm';
-import { MeshSurfaceSampler } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/math/MeshSurfaceSampler.js/+esm';
 import { PROCESSES } from './data_v2.js';
 import { icon } from './steel-index-ui.js';
 import { makeStockpile, makeSlabYard, makeSlabStack, makeCoilYard } from './plant-props.js';
@@ -47,7 +45,7 @@ const LAND = [[590, 40], [1180, 215], [1232, 300], [1196, 388], [746, 350], [700
 const CITY = [[-320, -95], [-125, -95], [-86, -62], [-117, 36], [47, 47], [125, 92], [210, 160], [320, 230], [320, 320], [-320, 320]];
 const ROADS = [[[-30, -80], [0, -90], [40, -84], [88, -70]], [[-30, -80], [-30, -72]], [[50, -53], [102, -47]], [[-2, -89], [-2, -24], [-12, -6], [-20, 10], [-27, 24], [-40, 48], [-46, 62], [-38, 80], [-22, 96], [-14, 102]], [[-86, -19], [0, -21]], [[-84, 46], [44, 46]], [[-24, 26], [20, 26]], [[-125, 10], [-106, 34], [-9, 114], [14, 125], [70, 126], [130, 98], [200, 120]]];
 const MAT = ['용선', '용강', '슬래브'];
-const RISE_DEPTH = 26, HOLD_MS = 2800, SHOW_MS = 3000, HOVER_GRACE = 350;
+const RISE_DEPTH = 26, HOLD_MS = 2800, SHOW_MS = 3000, HOVER_GRACE = 350, TITLE_MS = 6000; // TITLE_MS: 여는 장면 뒤 제목 카드를 보여 주는 시간
 
 // ---- 렌더러·장면(밤) ----------------------------------------------------------------------------------------------
 const stage = $('stage'), hud = $('hud');
@@ -116,7 +114,7 @@ function lightLayer(list) {
   const pts = new THREE.Points(g, m); pts.frustumCulled = false; pts.renderOrder = 5; scene.add(pts); lightLayers.push(pts); return pts;
 }
 // 보케 색: 흰 금빛 ~ 주황(사진처럼 섞임), 크기는 작은 것이 많고 큰 것이 드물게, 밝기도 제각각
-const BOKEH = ['#fff0cf', '#ffe1a6', '#ffd27a', '#ffd27a', '#ffb35c', '#ffb35c', '#ff9a3c', '#ff7a1a'];
+const BOKEH = ['#fff0cf', '#ffe1a6', '#ffd27a', '#ffd27a', '#ffb35c', '#ffb35c', '#ff9a3c', '#ff6b35'];
 const bokehLight = (p, scale = 1) => ({ p, c: BOKEH[(Math.random() * BOKEH.length) | 0], s: (1.6 + Math.pow(Math.random(), 2.2) * 7.5) * scale, b: 0.35 + Math.random() * 0.65 });
 const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 function alongLines(lines, n, y, jitter = 0.4) {
@@ -170,68 +168,24 @@ const loadAll = () => Promise.all(procs.map((p) => new Promise((resolve) => {
     const w = fb.max.x - fb.min.x + 5, d = fb.max.z - fb.min.z + 5, cx = (fb.min.x + fb.max.x) / 2, cz = (fb.min.z + fb.max.z) / 2;
     p.foot = { w, d, cx, cz }; p.modelTop = all.max.y;
     // 구역 둘레 주황 발광 테두리(받침 대신)
-    const glow = new THREE.Mesh(new THREE.PlaneGeometry(w + 10, d + 10), new THREE.MeshBasicMaterial({ map: GLOW, color: 0xff7a1a, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false })); glow.rotation.x = -Math.PI / 2; glow.position.set(cx, 0.06, cz); scene.add(glow);
-    for (let k = 0; k < 2; k++) { const r = new THREE.Mesh(new THREE.RingGeometry(0.97, 1, 96), new THREE.MeshBasicMaterial({ color: 0xffa04a, transparent: true, opacity: 0, depthWrite: false })); r.rotation.x = -Math.PI / 2; r.position.set(cx, 0.08, cz); scene.add(r); p.ripples.push(r); }
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(w + 10, d + 10), new THREE.MeshBasicMaterial({ map: GLOW, color: 0xffa63d, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false })); glow.rotation.x = -Math.PI / 2; glow.position.set(cx, 0.06, cz); scene.add(glow);
+    for (let k = 0; k < 2; k++) { const r = new THREE.Mesh(new THREE.RingGeometry(0.97, 1, 96), new THREE.MeshBasicMaterial({ color: 0xffcc66, transparent: true, opacity: 0, depthWrite: false })); r.rotation.x = -Math.PI / 2; r.position.set(cx, 0.08, cz); scene.add(r); p.ripples.push(r); }
     // 마우스 판정용 보이지 않는 상자(구역 전체)
     const hh = Math.max(4, p.modelTop), hit = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), new THREE.MeshBasicMaterial({ visible: false })); hit.position.set(cx, hh / 2, cz); scene.add(hit);
     // 구역 투광등(솟은 뒤 켜짐) + 따뜻한 빛
-    const warm = new THREE.PointLight(0xff9a3c, 0, 90, 1.6); warm.position.set(cx, p.modelTop + 8, cz); scene.add(warm);
-    p.cloudTargets = sampleProc(root, p.foot);
+    const warm = new THREE.PointLight(0xffb352, 0, 90, 1.6); warm.position.set(cx, p.modelTop + 8, cz); scene.add(warm);
     root.position.y = -RISE_DEPTH; root.visible = false; scene.add(root);
     Object.assign(p, { root, glow, hit, warm });
     loaded++; $('loadbar').style.width = `${Math.round(loaded / procs.length * 100)}%`; resolve(true);
   }, undefined, () => { loaded++; resolve(false); });
 })));
 
-// ---- 점 구름(여는 장면) ------------------------------------------------------------------------------------------
-// 홈과 같은 점: 흰색, 가산 혼합, 거리에 따라 작아짐. 톤매핑·흐림을 받지 않도록 별도 장면으로 합성 뒤에 그린다
-const pointScene = new THREE.Scene();
-const MODEL_N = 2200, EDGE_N = 320;
-function sampleProc(root, foot) {
-  root.updateMatrixWorld(true);
-  const meshes = [], a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
-  root.traverse((o) => { if (!o.isMesh || !o.visible) return;
-    const src = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry).attributes.position, f = new Float32Array(src.count * 3);
-    for (let i = 0; i < src.count; i++) f.set([src.getX(i), src.getY(i), src.getZ(i)], i * 3); // 양자화된 정점을 float로 풀어서
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(f, 3)); g.applyMatrix4(o.matrixWorld);
-    const ps = g.attributes.position; let area = 0; for (let i = 0; i < ps.count; i += 3) { a.fromBufferAttribute(ps, i); b.fromBufferAttribute(ps, i + 1); c.fromBufferAttribute(ps, i + 2); area += b.sub(a).cross(c.sub(a)).length() / 2; }
-    if (area > 0) meshes.push({ g, area }); });
-  const out = new Float32Array((MODEL_N + EDGE_N) * 3), v = new THREE.Vector3(), total = meshes.reduce((s, m) => s + m.area, 0) || 1; let k = 0;
-  meshes.forEach((m, mi) => { const n = mi === meshes.length - 1 ? MODEL_N - k : Math.round(m.area / total * MODEL_N); const s = new MeshSurfaceSampler(new THREE.Mesh(m.g)).build(); for (let j = 0; j < n && k < MODEL_N; j++, k++) { s.sample(v); out.set([v.x, v.y, v.z], k * 3); } });
-  for (; k < MODEL_N; k++) out.set([foot.cx, 0.05, foot.cz], k * 3);
-  const { w, d, cx, cz } = foot, per = 2 * (w + d); // 구역 테두리(홈의 바닥판 테두리처럼)
-  for (let j = 0; j < EDGE_N; j++, k++) { let s = (j + Math.random()) / EDGE_N * per, x, z; if (s < w) { x = cx - w / 2 + s; z = cz - d / 2; } else if ((s -= w) < d) { x = cx + w / 2; z = cz - d / 2 + s; } else if ((s -= d) < w) { x = cx + w / 2 - s; z = cz + d / 2; } else { s -= w; x = cx - w / 2; z = cz + d / 2 - s; } out.set([x, 0.05, z], k * 3); }
-  return out;
-}
-function landTargets() {
-  const pts = [...alongLines([[...LAND, LAND[0]]], 1500, 0.05), ...alongLines(ROADS, 900, 0.06), ...alongLines([CITY.slice(0, 7)], 450, -0.1)];
-  for (let n = 0; n < 900;) { const x = -104 + Math.random() * 210, z = -104 + Math.random() * 216; if (inside(LAND, x, z)) { pts.push([x, 0.05, z]); n++; } }
-  const out = new Float32Array(pts.length * 3); pts.forEach((p, i) => out.set(p, i * 3)); return out;
-}
-const PT_VS = 'attribute float seed; uniform float uSize, uK; varying float vA; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = uSize * (0.6 + seed * 0.8) * (uK / -mv.z); vA = 0.45 + seed * 0.55; }';
-const PT_FS = 'uniform float uOpacity; varying float vA; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; gl_FragColor = vec4(vec3(0.93), vA * uOpacity * smoothstep(0.5, 0.1, d)); }';
-function makeCloud(target) {
-  const n = target.length / 3, pos = new Float32Array(n * 3), from = new Float32Array(n * 3), seed = new Float32Array(n), drift = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) { const v = new THREE.Vector3().randomDirection().multiplyScalar(170 + Math.random() * 120); pos.set([v.x - 10, v.y * 0.6 + 40, v.z], i * 3); seed[i] = Math.random(); const d = new THREE.Vector3().randomDirection(); drift.set([d.x, d.y, d.z], i * 3); }
-  from.set(pos);
-  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('seed', new THREE.BufferAttribute(seed, 1));
-  const mat = new THREE.ShaderMaterial({ uniforms: { uSize: { value: 2.2 * renderer.getPixelRatio() }, uK: { value: 300 }, uOpacity: { value: 1 } }, vertexShader: PT_VS, fragmentShader: PT_FS, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending });
-  const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; pointScene.add(pts);
-  return { pts, geo, mat, pos, from, target, seed, drift, n };
-}
-const STAGGER = 0.35;
-function gather(cl, tg) { // 홈과 같은 모양 바꾸기: 점마다 조금씩 늦게 출발해 흩어졌다가 자리로 모인다
-  const { pos, from, target, seed, drift, n } = cl;
-  for (let i = 0; i < n; i++) { const i3 = i * 3, t = Math.min(1, Math.max(0, (tg - seed[i] * STAGGER) / (1 - STAGGER))), e = easeInOut(t), burst = Math.sin(Math.PI * t), d = burst * (6 + seed[i] * 10);
-    pos[i3] = from[i3] + (target[i3] - from[i3]) * e + drift[i3] * d; pos[i3 + 1] = from[i3 + 1] + (target[i3 + 1] - from[i3 + 1]) * e + drift[i3 + 1] * d; pos[i3 + 2] = from[i3 + 2] + (target[i3 + 2] - from[i3 + 2]) * e + drift[i3 + 2] * d; }
-  cl.geo.attributes.position.needsUpdate = true;
-}
 
 // ---- 공정 사이 흐름선 ------------------------------------------------------------------------------------------
 // 공정 연결 선: 구역 아래 둥근 주황 테두리(glowTex)와 같은 모양 — 가운데 얇은 주황 선 + 양옆 부드러운 번짐(가산 합성).
 // 띠 폭 4 안에서 uv.y(폭 방향)로 선을 그린다. reach까지만 보여 앞 구역에서 다음 구역으로 그어지듯 나타난다
 const flowMat = () => new THREE.ShaderMaterial({
-  uniforms: { t: { value: 0 }, reach: { value: 0 }, gain: { value: 1 }, color: { value: new THREE.Color(0xff7a1a) }, W: { value: 4.0 } },
+  uniforms: { t: { value: 0 }, reach: { value: 0 }, gain: { value: 1 }, color: { value: new THREE.Color(0xffa63d) }, W: { value: 4.0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: 'uniform float t, reach, W, gain; uniform vec3 color; varying vec2 vUv; void main(){ if (vUv.x > reach) discard; float d = abs(vUv.y - 0.5) * W; float core = 1.0 - smoothstep(0.3, 0.46, d); float halo = exp(-d * d / 1.6) * 0.5; float a = max(core * 0.95, halo) * 0.5 * gain; gl_FragColor = vec4(color, a); }',
   transparent: true, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending,
@@ -353,6 +307,7 @@ function growSurroundings(p, now) { // 구역이 솟기 시작한 뒤 소품은 
   P.inst.instanceMatrix.needsUpdate = true; if (all) P.done = true;
 }
 
+
 // ---- 칩: 번호 · 이름 · [들어가기] -----------------------------------------------------------------------------------
 procs.forEach((p) => {
   const el = document.createElement('div'); el.className = 'pc';
@@ -384,38 +339,15 @@ const maxDist = () => overviewPose().dist * 1.06;
 const clampPose = (p) => ({ ...p, dist: Math.min(p.dist, maxDist()) });
 function animateTo(to, dur = 1600) { anim = { t0: performance.now(), dur: REDUCED ? 1 : dur, from: { yaw: orbit.yaw, pitch: orbit.pitch, dist: orbit.dist, target: orbit.target.clone() }, to: { ...to, target: to.target.clone() } }; }
 
-// ---- 여는 장면 ----------------------------------------------------------------------------------------------------
-let landCloud = null, started = false;
-const intro = { t0: 0, done: false, dawnStarted: false, gathered: false };
-const INTRO = { gather: 2000, hold: 900, dusk: 2400 };
-const POSE_NIGHT = { yaw: 0.05, pitch: 0.26, dist: 330, target: new THREE.Vector3(-12, -34, 6) }; // 목표를 땅 아래에 둬 점 구름이 화면 위쪽에 오게(홈처럼 글자는 아래 빈 곳에)
-function startIntro() {
-  if (REDUCED) { finishIntro(true); return; }
-  landCloud = makeCloud(landTargets()); procs.forEach((p) => { if (p.cloudTargets) p.cloud = makeCloud(p.cloudTargets); });
-  Object.assign(orbit, { yaw: POSE_NIGHT.yaw - 0.15, pitch: POSE_NIGHT.pitch, dist: POSE_NIGHT.dist + 40, target: POSE_NIGHT.target.clone() }); animateTo(POSE_NIGHT, INTRO.gather + INTRO.hold);
-  renderer.toneMappingExposure = 0; intro.t0 = performance.now();
-  const steps = [...document.querySelectorAll('#ovSteps span')]; steps.forEach((s, i) => setTimeout(() => steps.forEach((q, k) => q.classList.toggle('on', k === i)), 300 + i * 550));
+// ---- 시작 ----------------------------------------------------------------------------------------------------------
+// 여는 장면 없이 바로 밤의 지도. 전체 보기 자리에서 제선 구역으로 다가가며 시작한다
+let started = false;
+function startMap() {
+  if (ambientLights) ambientLights.material.uniforms.uOn.value = 1;
+  const all = clampPose(POSE.all); Object.assign(orbit, { yaw: all.yaw, pitch: all.pitch, dist: all.dist }); orbit.target.copy(all.target);
+  setTimeout(() => $('ttl').classList.add('out'), TITLE_MS); // 제목 카드는 잠깐만
+  setTimeout(() => { if (!started) { started = true; goTo(0); } }, REDUCED ? 0 : 500);
 }
-function introTick(now) {
-  if (intro.done || !intro.t0) return;
-  const t = now - intro.t0, kg = Math.min(1, t / INTRO.gather);
-  if (!intro.gathered) { [landCloud, ...procs.map((p) => p.cloud)].forEach((cl) => cl && gather(cl, kg)); if (kg >= 1) intro.gathered = true; }
-  const td = t - INTRO.gather - INTRO.hold;
-  if (td > 0 && !intro.dawnStarted) { intro.dawnStarted = true; animateTo(clampPose(POSE.all), INTRO.dusk + 200); $('ov').classList.add('out'); }
-  const kd = Math.min(1, Math.max(0, td / INTRO.dusk)), e = easeInOut(kd);
-  renderer.toneMappingExposure = e; if (ambientLights) ambientLights.material.uniforms.uOn.value = e; // 밤의 지도가 드러나고 불빛이 켜진다
-  [landCloud, ...procs.map((p) => p.cloud)].forEach((cl) => { if (cl) cl.mat.uniforms.uOpacity.value = 1 - e; });
-  if (kd >= 1) finishIntro();
-}
-function finishIntro(instant = false) {
-  if (intro.done) return; intro.done = true;
-  renderer.toneMappingExposure = 1; if (ambientLights) ambientLights.material.uniforms.uOn.value = 1;
-  if (landCloud) landCloud.pts.visible = false; procs.forEach((p) => { if (p.cloud) p.cloud.pts.visible = false; });
-  $('ov').classList.add('out'); document.body.classList.remove('intro');
-  if (!intro.dawnStarted) animateTo(clampPose(POSE.all), instant ? 1 : 900);
-  setTimeout(() => { if (!started) { started = true; goTo(0); } }, instant ? 0 : 500);
-}
-$('ovSkip').onclick = () => finishIntro();
 
 // ---- 진행(타임라인) --------------------------------------------------------------------------------------------
 let cur = -1, playing = true, finished = false, hot = null;
@@ -433,7 +365,7 @@ function goTo(i) {
   if (view === '3d') animateTo(zonePose(procs[i]), 1700);
 }
 function finish() { finished = true; pause(); procs.forEach((p) => p.stop.classList.add('up')); } // 멀리 빠지지 않고 마지막 구역 가까이에서 천천히 돈다(전체는 [지도]나 휠로)
-addEventListener('keydown', (e) => { if (!intro.done) { finishIntro(); return; } if (e.key === ' ') { e.preventDefault(); playing ? pause() : play(); } else if (e.key === 'ArrowRight') { goTo(Math.min(procs.length - 1, cur + 1)); pause(); } else if (e.key === 'ArrowLeft') { goTo(Math.max(0, cur - 1)); pause(); } else if (e.key === 'Enter' && cur >= 0) enter(procs[cur]); else { const n = parseInt(e.key, 10); if (n >= 1 && n <= procs.length) { goTo(n - 1); pause(); } } });
+addEventListener('keydown', (e) => { if (e.key === ' ') { e.preventDefault(); playing ? pause() : play(); } else if (e.key === 'ArrowRight') { goTo(Math.min(procs.length - 1, cur + 1)); pause(); } else if (e.key === 'ArrowLeft') { goTo(Math.max(0, cur - 1)); pause(); } else if (e.key === 'Enter' && cur >= 0) enter(procs[cur]); else { const n = parseInt(e.key, 10); if (n >= 1 && n <= procs.length) { goTo(n - 1); pause(); } } });
 
 // ---- 지도 / 3D ---------------------------------------------------------------------------------------------------
 function setView(v) { view = v; $('v2d').classList.toggle('on', v === 'map'); $('v2d').setAttribute('aria-pressed', String(v === 'map')); $('v3d').classList.toggle('on', v === '3d'); $('v3d').setAttribute('aria-pressed', String(v === '3d')); animateTo(v === 'map' ? overviewPose() : cur >= 0 ? zonePose(procs[cur]) : clampPose(POSE.all), 1400); }
@@ -443,11 +375,11 @@ $('v2d').onclick = () => setView('map'); $('v3d').onclick = () => setView('3d');
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let drag = null;
 function pick(ev) { const r = renderer.domElement.getBoundingClientRect(); ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); const h = ray.intersectObjects(procs.filter((p) => p.up).map((p) => p.hit), false)[0]; return h ? procs.find((p) => p.hit === h.object) : null; }
 function setHot(p) { if (p === hot) return; const now = performance.now(); if (hot) { hot.hoverZone = false; hot.hoverOff = now; } hot = p; if (p) p.hoverZone = true; renderer.domElement.style.cursor = p ? 'pointer' : 'grab'; }
-renderer.domElement.addEventListener('pointerdown', (e) => { if (!intro.done) { finishIntro(); return; } drag = { x: e.clientX, y: e.clientY, moved: false }; stage.classList.add('dragging'); renderer.domElement.setPointerCapture(e.pointerId); });
+renderer.domElement.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, moved: false }; stage.classList.add('dragging'); renderer.domElement.setPointerCapture(e.pointerId); });
 renderer.domElement.addEventListener('pointermove', (e) => { if (drag) { const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true; orbit.yaw -= dx * 0.004; orbit.pitch = Math.min(1.52, Math.max(0.3, orbit.pitch + dy * 0.003)); drag.x = e.clientX; drag.y = e.clientY; anim = null; return; } setHot(pick(e)); });
 renderer.domElement.addEventListener('pointerleave', () => setHot(null));
 renderer.domElement.addEventListener('pointerup', (e) => { const d = drag; drag = null; stage.classList.remove('dragging'); if (!d || d.moved) return; const p = pick(e); if (p) { goTo(p.i); pause(); p.showUntil = performance.now() + SHOW_MS; } });
-renderer.domElement.addEventListener('wheel', (e) => { e.preventDefault(); orbit.dist = Math.min(intro.done ? maxDist() : 700, Math.max(50, orbit.dist * (1 + e.deltaY * 0.0012))); anim = null; }, { passive: false });
+renderer.domElement.addEventListener('wheel', (e) => { e.preventDefault(); orbit.dist = Math.min(maxDist(), Math.max(50, orbit.dist * (1 + e.deltaY * 0.0012))); anim = null; }, { passive: false });
 
 // ---- 후처리: 피사계 심도 → 블룸 → 출력 ---------------------------------------------------------------------------------
 const composer = new EffectComposer(renderer);
@@ -597,7 +529,6 @@ function placeHud(now) {
 }
 function frame(now) {
   requestAnimationFrame(frame);
-  introTick(now);
   procs.forEach((p) => { rise(p, now); growSurroundings(p, now); });
   trafficTick(now);
   dawnTick();
@@ -614,7 +545,6 @@ function frame(now) {
   bokeh.uniforms.focus.value = camera.position.distanceTo(o.target); // 초점은 지금 보는 곳. 지도 보기에서는 흐림 없음
   bokeh.uniforms.aperture.value = view === 'map' ? 0 : finished || cur < 0 ? 0.00004 : 0.0001;
   composer.render();
-  if (pointScene.children.some((x) => x.visible)) { renderer.autoClear = false; renderer.render(pointScene, camera); renderer.autoClear = true; } // 점은 톤매핑·흐림 없이 위에 겹친다
   placeHud(now);
 }
-loadAll().then(() => { buildLinks(); buildTraffic(); buildSurroundings(); buildAmbientLights(); $('load').classList.add('off'); startIntro(); requestAnimationFrame(frame); });
+loadAll().then(() => { buildLinks(); buildTraffic(); buildSurroundings(); buildAmbientLights(); $('load').classList.add('off'); startMap(); requestAnimationFrame(frame); });

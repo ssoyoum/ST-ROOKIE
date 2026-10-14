@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;700&family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap">
   <style>
     /* 표면: 피드백대로 Slate-900 불투명 + Slate-700 경계선 */
-    :root { --chrome: rgb(15,23,42); --chrome2: #141d33; --chrome3: #1e293b; --chrome4: #283548; --line: rgba(51,65,85,.6); --line2: rgba(51,65,85,.9); --text: #f2f2f2; --muted: #b3b3b8; --dim: #80808a; --accent: #f2f2f2; --accent-ink: #111; --hot: #ff9a2e; --molten: #ff7a1a; --warn: #f5b13d; --ok: #3ddc97; --cyan: #22c7f0; --ease: cubic-bezier(.2,.8,.2,1); --t-fast: .15s; --t-base: .25s; --f-body: "Noto Sans KR", "Pretendard", system-ui, sans-serif; --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace; --r-s: 8px; --r-m: 12px; --r-l: 16px; color-scheme: dark; }
+    :root { --chrome: rgb(15,23,42); --chrome2: #141d33; --chrome3: #1e293b; --chrome4: #283548; --line: rgba(51,65,85,.6); --line2: rgba(51,65,85,.9); --text: #f2f2f2; --muted: #b3b3b8; --dim: #80808a; --accent: #f2f2f2; --accent-ink: #111; --hot: #ff9e64; --molten: #ff6b35; --warn: #f5b13d; --ok: #3ddc97; --cyan: #ff9e64; /* 이름은 그대로 두고 값만 UI 주황(설비 번호 핀·핫스팟, 2026-10-14 요청) */ --ease: cubic-bezier(.2,.8,.2,1); --t-fast: .15s; --t-base: .25s; --f-body: "Noto Sans KR", "Pretendard", system-ui, sans-serif; --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace; --r-s: 8px; --r-m: 12px; --r-l: 16px; color-scheme: dark; }
     html, body { margin: 0; height: 100%; background: #0d1114; color: var(--text); font-family: var(--f-body); font-size: 15px; overflow: hidden; -webkit-font-smoothing: antialiased; }
     button { font-family: inherit; }
     button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--molten); outline-offset: 2px; }
@@ -23,8 +23,11 @@
     img.ic { display: block; }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
-    /* ---- 상단 알약 바 (v4). 임시 컨트롤이라 반투명을 둔다 ---- */
-    .top { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 7; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: rgba(18,18,20,.9); border: 1px solid var(--line2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    /* ---- 상단 알약 바 (v4). 임시 컨트롤이라 반투명을 둔다 ---- */    .top { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 7; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: rgba(18,18,20,.9); border: 1px solid var(--line2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    /* 설비 차례로 보기(재생) 중에는 알약 바를 위로 숨긴다. 마우스를 화면 위쪽으로 가져가면(body.peek) 내려온다 */
+    .top { transition: transform .35s var(--ease), opacity .35s var(--ease); width: max-content; max-width: calc(100vw - 20px); } /* left:50% 때문에 반 폭으로 줄어 글자가 한 자씩 줄바꿈되던 것을 막는다 */
+    .top .tabs button, .top .seg button { white-space: nowrap; }
+    body.touring:not(.peek) .top { transform: translate(-50%, calc(-100% - 16px)); opacity: 0; pointer-events: none; }
     .top .rb { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--chrome3); color: var(--text); display: grid; place-items: center; cursor: pointer; position: relative; transition: background var(--t-fast) var(--ease); }
     .top .rb:hover { background: var(--chrome4); }
     .top .rb[hidden] { display: none; }
@@ -44,8 +47,8 @@
     .hint { position: fixed; top: 20px; right: 18px; z-index: 5; font: 400 15px/1 var(--f-body); color: var(--muted); pointer-events: none; white-space: nowrap; }
 
 
-    /* ---- 오른쪽 패널 (불투명) ---- */
-    .right { position: fixed; top: 62px; right: 10px; bottom: 96px; z-index: 6; width: 440px; max-width: calc(100vw - 20px); border-radius: var(--r-l); background: var(--chrome); border: 1px solid var(--line2); display: none; flex-direction: column; overflow: hidden; }
+    /* ---- 오른쪽 패널 (반투명 + 흐림. 3D가 비치게, 2026-10-14 요청) ---- */
+    .right { position: fixed; top: 62px; right: 10px; bottom: 96px; z-index: 6; width: 440px; max-width: calc(100vw - 20px); border-radius: var(--r-l); background: rgba(15,23,42,.66); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--line2); display: none; flex-direction: column; overflow: hidden; }
     .right.on { display: flex; }
     .right .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 22px 18px; display: flex; flex-direction: column; scrollbar-width: thin; }
     .right .eyebrow { font: 400 13px/1 var(--f-mono); letter-spacing: .06em; color: var(--muted); }
@@ -54,7 +57,7 @@
     .right .x:hover { background: var(--chrome3); }
     .right h2 { margin: 20px 0 8px; font: 500 15px/1 var(--f-body); color: var(--muted); }
     .right p { margin: 0; font: 400 16px/1.6 var(--f-body); color: #e4e4e6; text-wrap: pretty; }
-    .right .io { display: grid; grid-template-columns: 1fr 20px 1fr; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--r-m); background: var(--chrome3); margin-top: 14px; }
+    .right .io { display: grid; grid-template-columns: 1fr 20px 1fr; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--r-m); background: rgba(30,41,59,.55); margin-top: 14px; }
     .right .io small { display: block; font: 400 15px/1 var(--f-body); color: var(--muted); margin-bottom: 6px; }
     .right .io b { font: 700 15px/1.4 var(--f-body); }
     .right .io span { color: var(--muted); font-size: 18px; text-align: center; }
@@ -81,27 +84,28 @@
     .badge { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line2); background: var(--chrome3); font: 600 15px/1 var(--f-body); color: var(--muted); }
     .badge.run { border-color: rgba(61,220,151,.5); color: var(--ok); }
     .badge.run::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); margin-right: 7px; animation: blink 1.2s infinite; }
-    .kpi { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; padding: 12px 14px; border-radius: var(--r-m); background: var(--chrome3); }
+    @keyframes blink { 0%, 100% { opacity: .2 } 50% { opacity: 1 } }
+    .kpi { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; padding: 12px 14px; border-radius: var(--r-m); background: rgba(30,41,59,.55); }
     .kpi b { font: 700 32px/1.1 var(--f-body); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
     .kpi span { font: 400 15px/1.4 var(--f-body); color: var(--muted); }
     .kpi small { font: 400 15px/1.4 var(--f-mono); color: var(--dim); }
     .hots { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
     .hots li button { width: 100%; display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start; padding: 9px 10px; border: 1px solid transparent; border-radius: var(--r-s); background: transparent; color: var(--text); text-align: left; cursor: pointer; font: 400 15px/1.45 var(--f-body); }
     .hots li button:hover { background: rgba(255,255,255,.05); }
-    .hots li.on button { background: rgba(34,199,240,.1); border-color: rgba(34,199,240,.5); }
-    .hots li button i { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; background: var(--cyan); box-shadow: 0 0 0 3px rgba(34,199,240,.25); }
+    .hots li.on button { background: rgba(255,158,100,.1); border-color: rgba(255,158,100,.5); }
+    .hots li button i { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; background: var(--cyan); box-shadow: 0 0 0 3px rgba(255,158,100,.25); }
     .hots li button b { display: block; font-weight: 600; }
     .hots li button small { display: block; font-size: 15px; color: var(--muted); }
     /* 3D 위 핫스팟 핀(step-fx 말풍선을 바꾼 것). 글은 패널 '현장 포인트'에서 */
     .sfx.lh-hot { pointer-events: none; }
-    .sfx.lh-hot .lh-pin { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; border: 2px solid #fff; background: var(--cyan); box-shadow: 0 0 0 0 rgba(34,199,240,.6); cursor: pointer; pointer-events: auto; padding: 0; animation: lhPulse 1.6s ease-out infinite; }
+    .sfx.lh-hot .lh-pin { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; border: 2px solid #fff; background: var(--cyan); box-shadow: 0 0 0 0 rgba(255,158,100,.6); cursor: pointer; pointer-events: auto; padding: 0; animation: lhPulse 1.6s ease-out infinite; }
     .sfx.lh-hot .lh-pin i { display: block; width: 100%; height: 100%; }
-    .sfx.lh-hot.on .lh-pin { background: var(--molten); box-shadow: 0 0 0 4px rgba(255,122,26,.35); animation: none; transform: translate(-50%, -50%) scale(1.25); }
-    @keyframes lhPulse { 0% { box-shadow: 0 0 0 0 rgba(34,199,240,.6); } 70% { box-shadow: 0 0 0 10px rgba(34,199,240,0); } 100% { box-shadow: 0 0 0 0 rgba(34,199,240,0); } }
+    .sfx.lh-hot.on .lh-pin { background: var(--molten); box-shadow: 0 0 0 4px rgba(255,107,53,.35); animation: none; transform: translate(-50%, -50%) scale(1.25); }
+    @keyframes lhPulse { 0% { box-shadow: 0 0 0 0 rgba(255,158,100,.6); } 70% { box-shadow: 0 0 0 10px rgba(255,158,100,0); } 100% { box-shadow: 0 0 0 0 rgba(255,158,100,0); } }
     @media (prefers-reduced-motion: reduce) { .sfx.lh-hot .lh-pin, .badge.run::before { animation: none; } }
     /* 단계 보기 (v4 단면 보기 카드) */
-    .stepcard .no { display: flex; align-items: center; gap: 12px; height: 50px; padding: 0 14px; border-radius: 999px; background: rgba(255,154,46,.16); box-shadow: 0 6px 18px rgba(255,120,30,.18); font: 700 17px/1 var(--f-body); }
-    .stepcard .no i { width: 28px; height: 28px; border-radius: 50%; background: #ff9a2e; color: #1a1206; font: 700 15px/1 var(--f-mono); font-style: normal; display: grid; place-items: center; }
+    .stepcard .no { display: flex; align-items: center; gap: 12px; height: 50px; padding: 0 14px; border-radius: 999px; background: rgba(255,158,100,.16); box-shadow: 0 6px 18px rgba(255,120,30,.18); font: 700 17px/1 var(--f-body); }
+    .stepcard .no i { width: 28px; height: 28px; border-radius: 50%; background: #ff9e64; color: #1a1206; font: 700 15px/1 var(--f-mono); font-style: normal; display: grid; place-items: center; }
     .stepcard .no em { margin-left: auto; width: 10px; height: 10px; border-radius: 3px; background: #6b7686; }
     .stepcard .heat { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 12px; border-radius: var(--r-m); background: #17120e; margin-top: 16px; }
     .stepcard .heat .bg { position: absolute; left: -30%; top: -40%; width: 160%; height: 180%; opacity: .4; pointer-events: none; }
@@ -110,43 +114,14 @@
     .stepcard .heat .val { font: 900 34px/1.1 var(--f-body); letter-spacing: -.01em; font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
     .right, .bar { box-shadow: 0 20px 25px -5px rgba(0,0,0,.5); }
     .stepcard .heat .bar { height: 10px; border-radius: 5px; background: linear-gradient(90deg,#3b82f6 0%,#facc15 40%,#f97316 65%,#ef4444 100%); opacity: .3; }
-    .stepcard .heat .fill { position: absolute; top: -2px; height: 14px; border-radius: 7px; background: linear-gradient(90deg,#ffd27a,#ff7a1a); }
+    .stepcard .heat .fill { position: absolute; top: -2px; height: 14px; border-radius: 7px; background: linear-gradient(90deg,#ffd27a,#ff6b35); }
     .stepcard .heat .scale { display: flex; justify-content: space-between; margin-top: 6px; font: 400 12px/1 var(--f-mono); color: #d2c6b8; }
     .stepcard .heat .note2 { font: 400 15px/1.5 var(--f-body); color: #c4b6a6; }
-    .stepcard .nav { display: flex; gap: 8px; margin-top: 14px; }
-    .stepcard .nav button { flex: 1; height: 40px; border-radius: 999px; border: 1px solid var(--line2); background: transparent; color: var(--text); font: 600 15px/1 var(--f-body); cursor: pointer; }
-    .stepcard .nav button:hover { background: var(--chrome3); }
 
-    /* AI 튜터 (v4) */
-    .chat { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px 12px; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; }
-    .msg.user { align-self: flex-end; max-width: 85%; background: var(--chrome4); padding: 10px 13px; border-radius: 12px 12px 4px 12px; font: 400 15px/1.5 var(--f-body); }
-    .msg.ai { align-self: flex-start; max-width: 94%; display: flex; flex-direction: column; gap: 8px; }
-    .msg.ai .b { background: var(--chrome3); padding: 10px 13px; border-radius: 12px 12px 12px 4px; font: 400 15px/1.6 var(--f-body); text-wrap: pretty; white-space: pre-wrap; }
-    .msg.ai .cite { font: 400 15px/1.4 var(--f-body); color: var(--muted); padding-left: 4px; }
-    .msg.ai .fu { text-align: left; display: flex; flex-direction: column; gap: 2px; background: transparent; border: 1px dashed var(--accent); border-radius: var(--r-s); padding: 8px 12px; color: var(--text); cursor: pointer; font: 400 15px/1.4 var(--f-body); }
-    .msg.safety { align-self: flex-start; max-width: 92%; background: rgba(255,90,90,.12); border: 1px solid rgba(255,90,90,.4); color: #ffc9c9; padding: 10px 12px; border-radius: 10px; font: 400 15px/1.55 var(--f-body); }
-    .msg.err { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line2); background: var(--chrome3); font: 600 15px/1.4 var(--f-body); }
-    .typing { align-self: flex-start; display: flex; gap: 4px; padding: 12px 14px; background: var(--chrome3); border-radius: 10px; }
-    .typing i { width: 6px; height: 6px; border-radius: 3px; background: var(--muted); animation: blink 1s infinite; } .typing i:nth-child(2) { animation-delay: .2s } .typing i:nth-child(3) { animation-delay: .4s }
-    @keyframes blink { 0%, 100% { opacity: .2 } 50% { opacity: 1 } }
-    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
-    .chips button { min-height: 36px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line2); background: var(--chrome3); color: var(--text); font: 400 15px/1.2 var(--f-body); cursor: pointer; text-align: left; }
-    .chips button:hover { background: var(--chrome4); }
-    .chiphead { display: flex; align-items: center; gap: 10px; margin-top: 6px; font: 600 15px/1 var(--f-body); color: var(--muted); white-space: nowrap; }
-    .chiphead i { flex: 1; height: 1px; background: var(--line2); }
-    form.send { display: flex; gap: 8px; padding: 10px 16px 12px; border-top: 1px solid var(--line); }
-    form.send input { flex: 1; min-width: 0; height: 42px; background: var(--chrome2); color: var(--text); border: 1px solid var(--line2); border-radius: 999px; padding: 0 16px; font: 400 15px/1 var(--f-body); outline: none; }
-    form.send input:focus { border-color: var(--accent); }
-    form.send button { height: 42px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--accent); color: var(--accent-ink); font: 700 15px/1 var(--f-body); cursor: pointer; flex: none; }
-    .tutorhead { display: flex; align-items: flex-start; gap: 10px; padding: 18px 16px 10px; }
-    .tutorhead h1 { margin: 0; font: 900 24px/1.1 var(--f-body); }
-    .tutorhead small { display: block; margin-top: 4px; font: 400 15px/1.4 var(--f-body); color: #c3ccd7; }
-    .tutorhead .x2 { width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: grid; place-items: center; }
-    .tutorhead .x2:hover { background: var(--chrome3); }
 
-    /* ---- 하단 재생 바 (불투명) ---- */
-    .bar { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 6; display: flex; align-items: center; gap: 16px; height: 74px; padding: 0 22px 0 12px; border-radius: 999px; background: var(--chrome); border: 1px solid var(--line2); max-width: calc(100vw - 20px); }
-    body.panel .bar { left: 10px; right: 460px; transform: none; max-width: none; width: auto; justify-content: center; }
+    /* ---- 하단 재생 바 (반투명 + 흐림) ---- */
+    .bar { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 6; display: flex; align-items: center; gap: 16px; height: 74px; padding: 0 22px 0 12px; border-radius: 999px; background: rgba(15,23,42,.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--line2); max-width: calc(100vw - 20px); }
+    body.panel .bar { left: calc((100vw - 460px) / 2); max-width: calc(100vw - 480px); } /* 패널 왼쪽 영역 가운데, 폭은 내용만큼(전에는 그 영역을 다 채워 길었다) */
     .bar .play { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line2); background: var(--chrome3); color: var(--text); display: grid; place-items: center; cursor: pointer; flex: none; }
     .bar .play:hover { background: var(--chrome4); }
     .bar .track { display: flex; align-items: flex-start; position: relative; }
@@ -174,20 +149,71 @@
     .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); z-index: 8; padding: 10px 16px; border-radius: 999px; background: var(--chrome); border: 1px solid rgba(245,177,61,.5); color: #ffd58a; font: 500 15px/1.3 var(--f-body); display: none; }
     .toast.on { display: block; }
     @media (prefers-reduced-motion: reduce) { #load, .bar .stop i { transition: none; } }
+
+    /* ---- HUD 스킨(2026-10-14 요청: 터미널/HUD 느낌). 아주 어두운 반투명 유리, 모노 라벨, 가는 주황 선, 모서리를 비스듬히 자른 판. 아래 규칙이 위의 알약(999px) 규칙을 덮어쓴다 ---- */
+    :root { --glass: rgba(6,12,18,.58); --glass2: rgba(255,255,255,.045); --edge: rgba(255,255,255,.1); --edge2: rgba(255,158,100,.45); --r-s: 3px; --r-m: 4px; --r-l: 6px; }
+    .top { border-radius: 4px; background: var(--glass); border-color: var(--edge); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); padding: 4px 8px; gap: 4px; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)); }
+    .top .rb { border-radius: 4px; background: transparent; border: 1px solid transparent; }
+    .top .rb:hover { background: var(--glass2); border-color: var(--edge); }
+    .top .rb.on { background: var(--hot); border-color: transparent; }
+    .top .tabs, .top .seg { border-radius: 4px; background: transparent; border: 1px solid var(--edge); height: 36px; padding: 0 2px; }
+    .top .tabs button, .top .seg button { border-radius: 3px; height: 30px; }
+    .top .tabs button.on, .top .seg button.on { background: rgba(255,158,100,.14); color: var(--hot); box-shadow: inset 0 -2px 0 var(--hot); }
+    .top .tabs button.on code { color: var(--hot); }
+    .top .sep { background: var(--edge); }
+    .hint { font: 400 13px/1 var(--f-mono); letter-spacing: .1em; color: var(--dim); }
+    .right { border-radius: 6px; background: var(--glass); border-color: var(--edge); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: none; clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)); }
+    .right::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, var(--hot), rgba(255,158,100,0) 70%); pointer-events: none; z-index: 1; }
+    .right .eyebrow, .right h2, .lvh, .right .io small, .kpi small { font-family: var(--f-mono); letter-spacing: .08em; font-size: 13px; }
+    .right .x, .right .steps .tile, .badge { border-radius: 4px; }
+    /* 긴 설명에서도 설비 이름·단계 머리는 위에 붙어 있고(sticky), 닫기(.x)는 패널 구석에, 단계 이동은 아래 .foot에 고정(#140) */
+    .right .phead, .stepcard .lv.l1 { position: sticky; top: -20px; z-index: 2; margin: -20px -22px 0; padding: 20px 22px 10px; background: rgba(6,12,18,.94); }
+    .stepcard .lv.l1 { border-bottom: 1px solid var(--line2); }
+    .right .x { z-index: 3; } /* 고정된 머리 위에 닫기 버튼이 오게 */
+    /* 좁은 화면(≤760px): 상단 바·재생 바를 화면 폭에 맞추고 안에서 가로 스크롤(조작 바가 화면 밖으로 넘어가지 않게, #140) */
+    @media (max-width: 760px) {
+      .top { left: 8px; right: 8px; transform: none; width: auto; max-width: none; overflow-x: auto; scrollbar-width: none; clip-path: none; }
+      body.touring:not(.peek) .top { transform: translateY(calc(-100% - 16px)); }
+      .bar, body.panel .bar { left: 8px; right: 8px; transform: none; width: auto; max-width: none; overflow-x: auto; scrollbar-width: none; clip-path: none; }
+      .bar .track { flex: none; }
+      .right { bottom: 84px; clip-path: none; }
+    }
+    .right .io, .kpi { border-radius: 4px; background: var(--glass2); border: 1px solid var(--edge); border-left: 2px solid var(--edge2); }
+    .stepcard .heat { border-radius: 4px; }
+    .right .foot { border-top-color: var(--edge); }
+    .right .foot button { border-radius: 4px; background: transparent; border-color: var(--edge); }
+    .right .foot button.primary { background: rgba(255,158,100,.14); color: var(--hot); border: 1px solid var(--edge2); }
+    .right .foot button.primary:hover { background: var(--hot); color: var(--accent-ink); filter: none; }
+    .stepcard .no { border-radius: 4px; background: var(--glass2); border: 1px solid var(--edge2); box-shadow: none; }
+    .stepcard .no i { border-radius: 3px; }
+    .badge { background: transparent; }
+    .badge.run { border-color: var(--edge2); color: var(--hot); } /* '재생 중' 배지의 초록이 거슬린다는 의견 → 주황(2026-10-14) */
+    .badge.run::before { background: var(--hot); }
+    .bar { border-radius: 4px; background: var(--glass); border-color: var(--edge); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: none; height: 68px; clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
+    .bar .play { border-radius: 4px; background: transparent; border-color: var(--edge2); }
+    .bar .play:hover { background: rgba(255,158,100,.14); }
+    .bar .track::before { background: var(--edge); }
+    .bar .stop i { border-radius: 2px; background: transparent; border-color: var(--dim); }
+    .bar .stop.done i { background: var(--hot); border-color: var(--hot); }
+    .bar .stop.cur { color: var(--hot); }
+    .bar .stop.cur i { background: var(--hot); border-color: var(--hot); transform: scale(1.5) rotate(45deg); }
+    .bar .speed { border-radius: 4px; border: 1px solid var(--edge); }
+    .toast { border-radius: 4px; background: var(--glass); backdrop-filter: blur(18px); }
+    .tag .k { border-radius: 4px !important; background: var(--glass) !important; border-color: var(--edge2) !important; backdrop-filter: blur(12px) !important; }
+    .tag .k i { border-radius: 3px !important; }
   </style>
 </head>
 <body>
   <div id="stage" aria-label="제철 공정 3D. 위 알약 바에서 공정을 고르고, 왼쪽 설비 목록이나 3D를 클릭하면 설비를 확대해 보여 줍니다."></div>
   <div id="hud"></div>
 
-  <!-- 상단 알약 바: 홈 · 공정 탭 · 외관/평면 · 닫기 | 튜터 · 테마 · 마이페이지 · 로그아웃(토큰이 있을 때만) -->
+  <!-- 상단 알약 바: 홈 · 공정 탭 · 외관/대시보드 · 닫기 | 테마 · 마이페이지 · 로그아웃(토큰이 있을 때만). 튜터는 #140으로 마이페이지에만. 설비 차례로 보기(재생) 중에는 위로 숨고 마우스를 위쪽에 가져가면 내려온다 -->
   <div class="top" id="top">
     <button class="rb" id="btnHome" title="홈으로" aria-label="홈으로"><img class="ic" id="icHome" width="22" height="22" alt=""></button>
     <div class="tabs" id="tabs" role="tablist" aria-label="공정 선택"></div>
-    <div class="seg" role="group" aria-label="보기"><button id="btnView3d" class="on" aria-pressed="true">외관</button><button id="btnViewPlan" aria-pressed="false">평면</button></div>
+    <div class="seg" role="group" aria-label="보기"><button id="btnView3d" class="on" aria-pressed="true">외관</button><button id="btnViewBoard" aria-pressed="false">대시보드</button></div>
     <button class="rb" id="btnClose" title="설비 보기 끝내기" aria-label="설비 보기 끝내기"><img class="ic" id="icClose" width="20" height="20" alt=""></button>
     <span class="sep"></span>
-    <button class="rb" id="btnTutor" title="AI 튜터" aria-label="AI 튜터"><img class="ic" id="icBot" width="24" height="24" alt=""><span class="dot"></span></button>
     <button class="rb" id="btnTheme" title="라이트 모드로" aria-label="테마 바꾸기"><img class="ic" id="icTheme" width="22" height="22" alt=""></button>
     <button class="rb" id="btnUser" title="마이페이지" aria-label="마이페이지"><img class="ic" id="icUser" width="22" height="22" alt=""></button>
     <button class="rb" id="btnLogout" title="로그아웃" aria-label="로그아웃" hidden><img class="ic" id="icLogout" width="22" height="22" alt=""></button>

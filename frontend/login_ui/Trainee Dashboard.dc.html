@@ -322,6 +322,9 @@ class Component extends DCLogic {
       const { createLearningChat } = await import('../3d-demo/learning-chat.js');
       this.chat = await createLearningChat(this);
       // AI 튜터는 학습 전용이다. 평가는 /exam에서 별도로 진행한다.
+      // 공정 화면 [튜터에게 묻기]에서 넘어온 맥락(?p=공정&eq=설비&ask=1, #140): 그 공정·설비를 고른 채 AI 튜터 입력창으로 간다(이 브랜치에는 ASK/LEARN 탭이 없다)
+      const q = new URLSearchParams(location.search), p0 = q.get('p'), eq0 = q.get('eq');
+      if (p0 && m.findProcess(p0)) { this.setState({ processId: p0, selectedId: m.findEquipment(p0, eq0) ? eq0 : null }); if (q.get('ask')) this.openTutor(); }
       this.forceUpdate();
     });
     // 튜터 패널 머리의 포석호 <cp-character>(x-import가 등록을 기다린다)
