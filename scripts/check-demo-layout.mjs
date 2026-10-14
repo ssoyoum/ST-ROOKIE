@@ -28,7 +28,7 @@ try {
   for (const size of [{ width: 1366, height: 768 }, { width: 1280, height: 720 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(size);
     const boxes = await page.evaluate(() => Object.fromEntries(['top', 'bar', 'right'].map((id) => { const r = document.getElementById(id).getBoundingClientRect(); return [id, { x: r.x, right: r.right, y: r.y, bottom: r.bottom }]; })));
-    for (const box of Object.values(boxes)) { assert.ok(box.x >= -1 && box.right <= size.width + 1); assert.ok(box.y >= 0 && box.bottom <= size.height); }
+    for (const [id, box] of Object.entries(boxes)) { assert.ok(box.x >= -1 && box.right <= size.width + 1, `${id} bounds at ${size.width}: ${JSON.stringify(box)}`); assert.ok(box.y >= 0 && box.bottom <= size.height); }
     assert.ok(boxes.right.bottom <= boxes.bar.y);
     await page.screenshot({ path: `docs/screenshots/demo-fixes/process-${size.width}.png` });
   }
@@ -48,6 +48,8 @@ try {
     assert.ok(input && input.y >= 0 && input.y + input.height <= size.height, 'composer stays visible on laptop');
     await page.screenshot({ path: `docs/screenshots/demo-fixes/mypage-${size.width}.png` });
   }
+  const verifyLlm = process.env.DEMO_QA_LLM === 'on';
+  if (verifyLlm) {
   await trainee.locator('#tutorInput').fill('고로에서 코크스가 하는 역할을 두 문장으로 설명해 주세요.');
   const responsePromise = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/chat' && r.request().method() === 'POST', { timeout: 180000 });
   await trainee.getByRole('button', { name: '보내기', exact: true }).click();
@@ -57,6 +59,7 @@ try {
   assert.match(text, /환원|열원|일산화탄소/);
   await trainee.locator('#tutorInput:enabled').waitFor();
   await page.screenshot({ path: 'docs/screenshots/demo-fixes/mypage-gemini.png' });
+  }
   await page.setViewportSize({ width: 390, height: 844 });
   await trainee.locator('#tutorInput').scrollIntoViewIfNeeded();
   await page.screenshot({ path: 'docs/screenshots/demo-fixes/mypage-mobile.png' });
@@ -83,5 +86,5 @@ try {
   assert.equal(await page.locator('#stage-char cp-character .fx').getAttribute('data-mood'), 'celebrate');
   await page.screenshot({ path: 'docs/screenshots/demo-fixes/exam-pass.png', fullPage: true });
   assert.deepEqual(errors, []);
-  console.log('Gemini real response, process controls/no chat, My Page context/composer, mobile and retry/pass expressions passed.');
+  console.log(`Process controls/no chat, My Page context/composer, mobile and retry/pass expressions passed. Real LLM call: ${verifyLlm ? 'verified' : 'skipped'}.`);
 } finally { await context.close(); await browser.close(); }

@@ -1,0 +1,19 @@
+{
+  "provider": "Gemini",
+  "wrongAnswerTurns": 6,
+  "completedState": "completed",
+  "score": 0,
+  "unlocked": false,
+  "retryConcepts": [
+    "sinter_purpose",
+    "coke_reduction",
+    "blast_furnace_hot_metal"
+  ],
+  "resultMotion": "cheer_retry",
+  "resultMood": "sad",
+  "reloadRestoresEmotion": true,
+  "retryStarted": true,
+  "retryKind": "retry",
+  "retryState": "awaiting_answer",
+  "elapsedSeconds": 54
+}
