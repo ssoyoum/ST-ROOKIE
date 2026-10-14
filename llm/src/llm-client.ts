@@ -11,6 +11,8 @@ export interface GenerateRequest {
    * 지원하지 않는 provider는 부르지 않고 끝에 한 번에 돌려준다. 돌려주는 값은 스트리밍과 상관없이 전체 텍스트다.
    */
   onText?: (soFar: string) => void;
+  /** 시험 작업(backend/src/education/jobs.ts)을 취소하면 진행 중인 추론도 끊는다. */
+  signal?: AbortSignal;
 }
 
 /** 튜터·평가자·Agent가 provider 종류를 알 필요 없게 하는 최소 계약. */

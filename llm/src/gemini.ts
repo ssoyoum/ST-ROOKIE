@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { LlmUnavailableError } from "../../backend/src/checkpoint/types.js";
-import type { GenerateRequest } from "./llm-client.js";
+import type { GenerateRequest, LlmClient } from "./llm-client.js";
 
 export type { GenerateRequest, LlmClient } from "./llm-client.js";
 
@@ -46,7 +46,7 @@ function connectionError(error: unknown): GeminiCallError {
   return new GeminiCallError(`Gemini 연결 실패: ${e?.message ?? String(error)}`, timeout ? "timeout" : "network");
 }
 
-export class GeminiClient {
+export class GeminiClient implements LlmClient {
   constructor(private readonly options: GeminiOptions = {}) {}
 
   /** 응답 텍스트를 돌려준다. 키가 없거나 연결·HTTP 오류면 LlmUnavailableError. */
@@ -77,7 +77,8 @@ export class GeminiClient {
                 : { responseMimeType: "text/plain" }),
             },
           }),
-          signal: AbortSignal.timeout(this.options.timeoutMs ?? geminiTimeoutMs()),
+          // 시험 작업이 취소되면(req.signal) 추론도 끊는다. 시간 제한은 geminiTimeoutMs().
+          signal: req.signal ? AbortSignal.any([req.signal, AbortSignal.timeout(this.options.timeoutMs ?? geminiTimeoutMs())]) : AbortSignal.timeout(this.options.timeoutMs ?? geminiTimeoutMs()),
         },
       );
     } catch (error) {
