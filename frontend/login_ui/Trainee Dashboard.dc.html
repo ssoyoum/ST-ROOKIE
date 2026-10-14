@@ -57,7 +57,7 @@
     .h2 { margin: 0; font-size: 18px; font-weight: 700; }
     /* 학습 모듈(왼쪽) + AI 튜터(오른쪽). 좁은 화면에서는 세로로 쌓는다 */
     .learn { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: stretch; }
-    /* 오른쪽 열(AI 튜터): 기본 규칙. 아래 '#142' 규칙이 화면 높이에 맞춘 독립 카드로 덮어쓴다 */
+    /* 오른쪽 열(AI 튜터): 왼쪽 2D 모듈과 같은 줄 높이를 따르고, 카드는 남은 높이를 채운다(basis 0) */
     .side { display: flex; flex-direction: column; gap: 14px; min-width: 0; min-height: 0; padding: 19px 0; }
     .side > .card { flex: 1 1 0; min-height: 0; }
     .tutor { display: flex; flex-direction: column; }
@@ -67,10 +67,8 @@
     .module { display: flex; flex-direction: column; gap: 10px; min-width: 0; position: relative; z-index: 3; } /* 설비 미리보기 창이 오른쪽 AI 튜터 열 위에 뜨게 */
     @keyframes blink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
     @media (max-width: 1100px) { .learn { grid-template-columns: 1fr; } .side > .card { flex: none; height: 640px; } }
-    /* AI 튜터 카드는 왼쪽 모듈 높이에 맞추지 않고 화면 높이에 맞춘다(#142). 스크롤을 따라오고(sticky), 대화만 안에서 스크롤하며 머리·추천 질문·입력창은 늘 보인다.
-       노트북(1366×768·1280×720)에서도 입력창이 화면 안에 있다 */
-    .learn { align-items: start; }
-    .side { position: sticky; top: 104px; padding: 0; height: clamp(360px, calc(100dvh - 310px), 720px); }
+    /* AI 튜터 카드는 왼쪽 2D 모듈(공정)과 같은 높이다: 같은 줄에서 늘어나고(stretch), 대화만 안에서 스크롤하며 머리·추천 질문·입력창은 카드 안에 늘 보인다(#142) */
+    .side { padding: 0; }
     .side > .card { overflow: hidden; }
     .tutor [data-al="head"], .tutor [data-al="foot"] { flex: none; }
     .tutor [data-al="chat"] { overscroll-behavior: contain; }
