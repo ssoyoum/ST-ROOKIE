@@ -53,6 +53,10 @@ export function createApp({ engine, usage, webRoot = join(process.cwd(), "fronte
       res.json({ connected, reason, provider: "Ollama", model: info.model });
       return;
     }
+    if (info.provider === "anthropic") {
+      res.json({ connected: Boolean(process.env.ANTHROPIC_API_KEY), provider: "Claude", model: info.model });
+      return;
+    }
     res.json({ connected: Boolean(process.env.GEMINI_API_KEY), provider: "Gemini", model: info.model });
   });
 

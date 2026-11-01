@@ -137,13 +137,17 @@ export interface EvalProvider {
 }
 
 /**
- * LLM_PROVIDER에 맞는 평가 준비를 확인한다. Gemini는 GEMINI_API_KEY, Ollama는 서버·모델이 있어야 한다.
+ * LLM_PROVIDER에 맞는 평가 준비를 확인한다. Gemini는 GEMINI_API_KEY, Claude는 ANTHROPIC_API_KEY, Ollama는 서버·모델이 있어야 한다.
  * 준비가 안 됐으면 이유를 출력하고 null(호출한 쪽은 exitCode 1로 끝낸다).
  */
 export async function evalProvider(): Promise<EvalProvider | null> {
   const info = providerInfo();
   if (info.provider === "gemini" && !process.env.GEMINI_API_KEY) {
     console.error("GEMINI_API_KEY가 없습니다. .env에 키를 넣거나 LLM_PROVIDER=ollama로 로컬 모델을 쓰세요.");
+    return null;
+  }
+  if (info.provider === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
+    console.error("ANTHROPIC_API_KEY가 없습니다. .env에 키를 넣거나 다른 LLM_PROVIDER를 쓰세요.");
     return null;
   }
   if (info.provider === "ollama") {

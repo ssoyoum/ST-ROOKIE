@@ -1,6 +1,6 @@
-# LLM provider: Gemini와 Ollama
+# LLM provider: Gemini, Ollama, Claude
 
-튜터(학습·체크포인트·보충학습·평가 시험)와 평가자, 관리자 AI 요약은 하나의 LLM 클라이언트를 같이 쓴다. `LLM_PROVIDER`로 Gemini(기본)와 로컬 모델(Ollama)을 고른다. 에이전트 코드는 `LlmClient` 계약(`llm/src/llm-client.ts`)만 알고 provider를 모른다. [agent-roadmap.md](agent-roadmap.md) Stage 4(Mads-Serve: 모델 비교)의 기반이다.
+튜터(학습·체크포인트·보충학습·평가 시험)와 평가자, 관리자 AI 요약은 하나의 LLM 클라이언트를 같이 쓴다. `LLM_PROVIDER`로 Gemini(기본), 로컬 모델(Ollama), Claude(`anthropic`, 모델 비교 측정용)를 고른다. 에이전트 코드는 `LlmClient` 계약(`llm/src/llm-client.ts`)만 알고 provider를 모른다. [agent-roadmap.md](agent-roadmap.md) Stage 4(Mads-Serve: 모델 비교)의 기반이다.
 
 ## 실행
 
@@ -12,7 +12,8 @@
 
 Ollama 준비: [Ollama](https://ollama.com) 설치 → `ollama pull qwen2.5:3b` → `npm run start:ollama`. 설정은 `.env.example`의 `OLLAMA_*`.
 
-- `PRIVATE_LLM_ONLY=1`이면 Gemini를 쓰지 않는다. `LLM_PROVIDER=gemini`와 함께 쓰면 서버가 시작하지 않는다(학습자 답이 밖으로 나가지 않게).
+- `PRIVATE_LLM_ONLY=1`이면 외부 API(Gemini·Claude)를 쓰지 않는다. `LLM_PROVIDER=gemini`·`anthropic`과 함께 쓰면 서버가 시작하지 않는다(학습자 답이 밖으로 나가지 않게).
+- Claude: `LLM_PROVIDER=anthropic`, 설정은 `.env.example`의 `ANTHROPIC_*`(기본 모델 `claude-haiku-5-5`, effort `low`). 시연은 Gemini를 유지하고, Claude는 같은 평가 세트로 비교할 때 쓴다.
 - `/api/status`는 지금 provider와 모델, Ollama면 연결 상태(`ready`·`model_missing`·`unreachable`)를 돌려준다.
 - 사용자별 하루 호출 한도(`LLM_DAILY_LIMIT`)는 provider와 상관없이 센다.
 - 시험 질문 말투 다듬기(`QUESTION_POLISH`, 기본 `on`): `off`면 팀이 검수한 질문 은행 원문을 그대로 묻고 다듬기 호출을 하지 않는다. `start:gemini`는 Gemini 호출을 줄이려고 기본 `off`다(2026-10-17).
@@ -25,15 +26,18 @@ Ollama 준비: [Ollama](https://ollama.com) 설치 → `ollama pull qwen2.5:3b` 
 | `llm/src/provider.ts` | `configuredProvider`, `providerInfo`(label `provider:모델`), `createLlmClient`, `profileFor` |
 | `llm/src/ollama.ts` | Ollama `/api/chat` 클라이언트. `responseSchema`를 JSON Schema(`json-schema.ts`)로 바꿔 `format`에 넣고, 스트리밍(NDJSON), 연결 확인, 미리 올리기 |
 | `llm/src/gemini.ts` | Gemini 클라이언트 |
+| `llm/src/anthropic.ts` | Claude 클라이언트(`@anthropic-ai/sdk`). `responseSchema`를 구조화 출력(`output_config.format`, 모든 object에 `additionalProperties: false`)으로 보낸다. 생각(thinking)은 끄고(기존 출력 상한 200~512토큰을 생각 토큰이 잘라 먹지 않게), temperature는 보내지 않는다(현재 모델은 기본값 외 값을 400으로 막음). SDK 재시도는 끄고 재시도는 Gemini처럼 호출하는 쪽이 정한다 |
 | `llm/src/learning-context.ts`, `llm/prompts/learning-compact.md` | 로컬 모델용 학습 튜터 입력 줄이기·짧은 프롬프트 |
 | `llm/src/evaluator.ts` | 채점 보강 `repairFormat`·`verifyBoundary`(`llm/prompts/evaluator-keypoints.md`) |
 
 - 오류는 provider와 상관없이 `GeminiCallError`(reason: `timeout`·`network`·`http`·`rate_limit`)로 올라와 재시도·오류 응답을 같이 탄다. Ollama 오류에서 Gemini로 넘어가지 않는다.
 - 응답 형식 검증(source id·개념 id·화면 조작·키워드 카드)은 provider와 상관없이 서버가 한다.
-- 요청 trace(`docs/agent-observability.md`)는 호출마다 `gemini:모델`·`ollama:모델`을 남겨 `npm run trace:report`가 모델별로 나눠 보여 준다.
+- 요청 trace(`docs/agent-observability.md`)는 호출마다 `gemini:모델`·`ollama:모델`·`anthropic:모델`을 남겨 `npm run trace:report`가 모델별로 나눠 보여 준다.
 - 학습 답 저장(`answer-cache.ts`)은 버전에 provider·모델·프롬프트가 들어가 Gemini 답과 로컬 모델 답이 섞이지 않는다.
 
 ## provider별 설정 (`profileFor`)
+
+Claude는 Gemini와 같은 설정을 쓴다(같은 조건으로 비교하려고).
 
 | | Gemini | Ollama |
 |---|---|---|
@@ -47,7 +51,7 @@ compact를 쓰는 이유: 3B 모델을 CPU로 돌리면 입력 길이가 곧 지
 
 ## 평가 (같은 세트로 provider 비교)
 
-`eval:evaluator`, `eval:learning`, `eval:supplement`, `eval:questions`는 `LLM_PROVIDER`를 따른다. Ollama 결과는 `llm/eval/results/{이름}-ollama.jsonl`에 따로 쌓여 Gemini 기록과 섞이지 않는다. 로컬 모델은 케이스 사이 대기가 없다.
+`eval:evaluator`, `eval:learning`, `eval:supplement`, `eval:questions`는 `LLM_PROVIDER`를 따른다. Ollama·Claude 결과는 `llm/eval/results/{이름}-ollama.jsonl`·`{이름}-anthropic.jsonl`에 따로 쌓여 Gemini 기록과 섞이지 않는다. 로컬 모델은 케이스 사이 대기가 없다.
 
 ```
 LLM_PROVIDER=ollama npm run eval:evaluator -- --set smoke   # 채점 보강 켬, --no-guards로 끄고 비교

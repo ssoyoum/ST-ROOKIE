@@ -1,8 +1,9 @@
-// LLM provider(llm/src/provider.ts)·Ollama 클라이언트(llm/src/ollama.ts)·로컬 모델용 학습 튜터 설정(compact)을 검사한다.
-// 실제 Gemini·Ollama는 부르지 않는다(가짜 fetch).
+// LLM provider(llm/src/provider.ts)·Ollama 클라이언트(llm/src/ollama.ts)·Claude 클라이언트(llm/src/anthropic.ts)·로컬 모델용 학습 튜터 설정(compact)을 검사한다.
+// 실제 Gemini·Ollama·Claude는 부르지 않는다(가짜 fetch).
 import assert from "node:assert/strict";
 import test from "node:test";
 import { RetryingLlmClient } from "../../llm/eval/run-log.js";
+import { AnthropicClient, toClaudeSchema } from "../../llm/src/anthropic.js";
 import { GeminiCallError, GeminiClient } from "../../llm/src/gemini.js";
 import { toJsonSchema } from "../../llm/src/json-schema.js";
 import { COMPACT_OUTPUT_TOKENS, GeminiLearningAgent, type LearningInput } from "../../llm/src/learning-agent.js";
@@ -50,6 +51,52 @@ test("provider: 기본은 gemini, ollama 선택, 모르는 값과 PRIVATE_LLM_ON
   assert.equal(providerInfo({ GEMINI_MODEL: "gemini-x" }).label, "gemini:gemini-x");
   assert.deepEqual(profileFor("ollama"), { learning: "compact", evaluatorGuards: true, groundingCheck: true });
   assert.deepEqual(profileFor("gemini"), { learning: "full", evaluatorGuards: false, groundingCheck: false });
+});
+
+test("provider: anthropic 선택, 기본 모델 claude-haiku-5-5, PRIVATE_LLM_ONLY=1이면 막는다", () => {
+  assert.ok(createLlmClient({}, { LLM_PROVIDER: "anthropic" }) instanceof AnthropicClient);
+  assert.equal(providerInfo({ LLM_PROVIDER: "anthropic" }).label, "anthropic:claude-haiku-5-5");
+  assert.equal(providerInfo({ LLM_PROVIDER: "anthropic", ANTHROPIC_MODEL: "claude-sonnet-5-5" }).model, "claude-sonnet-5-5");
+  assert.throws(() => configuredProvider({ LLM_PROVIDER: "anthropic", PRIVATE_LLM_ONLY: "1" }), /Claude를 쓸 수 없습니다/);
+  assert.deepEqual(profileFor("anthropic"), profileFor("gemini"));
+});
+
+test("AnthropicClient: 생각 끔·effort·구조화 출력 schema를 보내고 temperature는 보내지 않으며, 토큰 수를 trace에 남긴다", async () => {
+  const { sent, fetch } = fakeFetch(() => Response.json({
+    id: "msg_1", type: "message", role: "assistant", model: "claude-haiku-5-5", stop_reason: "end_turn", stop_sequence: null,
+    content: [{ type: "text", text: "{\"a\":1}" }], usage: { input_tokens: 300, output_tokens: 40 },
+  }));
+  const client = new AnthropicClient({ apiKey: "k", effort: "low", fetch });
+  const t = new Trace("learning");
+  const text = await runWithTrace(t, () => client.generate({ ...req, responseSchema: { type: "OBJECT", properties: { a: { type: "INTEGER" } } } }));
+  assert.equal(text, "{\"a\":1}");
+  const { url, body } = sent[0]!;
+  assert.match(url, /\/v1\/messages$/);
+  assert.equal(body.model, "claude-haiku-5-5");
+  assert.equal(body.max_tokens, 100);
+  assert.equal(body.temperature, undefined);
+  assert.deepEqual(body.thinking, { type: "disabled" });
+  assert.deepEqual(body.output_config, { effort: "low", format: { type: "json_schema", schema: { type: "object", properties: { a: { type: "integer" } }, additionalProperties: false } } });
+  assert.deepEqual(t.llm_calls[0]!.tokens, { prompt: 300, output: 40, total: 340 });
+  assert.equal(t.llm_calls[0]!.model, "anthropic:claude-haiku-5-5");
+});
+
+test("AnthropicClient: 429는 rate_limit, 400은 http(재시도 안 함), 키가 없으면 부르지 않는다", async () => {
+  const error = (status: number) => fakeFetch(() => Response.json({ type: "error", error: { type: "x", message: "m" } }, { status })).fetch;
+  await assert.rejects(new AnthropicClient({ apiKey: "k", fetch: error(429) }).generate(req), (e: GeminiCallError) => e.reason === "rate_limit" && e.retryable);
+  await assert.rejects(new AnthropicClient({ apiKey: "k", fetch: error(400) }).generate(req), (e: GeminiCallError) => e.reason === "http" && e.httpStatus === 400 && !e.retryable);
+  const saved = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  try {
+    await assert.rejects(new AnthropicClient({ fetch: error(500) }).generate(req), /ANTHROPIC_API_KEY/);
+  } finally {
+    if (saved !== undefined) process.env.ANTHROPIC_API_KEY = saved;
+  }
+});
+
+test("toClaudeSchema: nullable object에도 additionalProperties: false를 붙인다", () => {
+  assert.deepEqual(toClaudeSchema({ type: "OBJECT", properties: { b: { type: "OBJECT", nullable: true, properties: {} } } }),
+    { type: "object", properties: { b: { type: ["object", "null"], properties: {}, additionalProperties: false } }, additionalProperties: false });
 });
 
 test("createLlmClient: beforeCall(호출 수 제한)을 어느 provider에도 넣는다", async () => {
