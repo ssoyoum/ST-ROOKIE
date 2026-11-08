@@ -65,7 +65,7 @@
   </tr>
 </table>
 
-<sub>캡처: 2026-11-08 로컬 실행(Gemini), 관리자 화면은 <code>npm run db:seed-demo</code> 시연 기록 기준. 학습 기록 첫 화면은 팀 PR #194·#195(cookieimda, 10/20~21)의 카드 화면입니다. 팀 원본에서는 #198(10/22)로 이전 화면으로 되돌렸고, 이 포크에서만 다시 살렸습니다.</sub>
+<sub>캡처: 2026-11-08 로컬 실행(Gemini), 관리자 화면은 <code>npm run db:seed-demo</code> 시연 기록 기준.</sub>
 
 ## 학습 튜터가 답하는 방식
 
