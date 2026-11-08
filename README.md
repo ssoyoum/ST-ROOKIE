@@ -41,6 +41,18 @@
 <table>
   <tr>
     <td width="50%" align="center" valign="top">
+      <b>학습 기록 첫 화면 (LEARN & ASK)</b><br>
+      <img src="docs/readme/learn-cards.jpg" alt="작동 단계·평가 시험·사원증 등 학습 기능을 카드로 넘겨 고르는 LEARN & ASK 화면" width="100%"><br>
+      <sub>학습 기능 10개를 카드로 넘겨 고르고, 포석호가 사용법을 말로 안내합니다.<br><b>팀원</b>: 화면·포석호 브리핑(cookieimda)</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <b>카드에서 포석호에게 묻기</b><br>
+      <img src="docs/readme/learn-ask.jpg" alt="작동 단계 카드 창에서 고로 질문에 튜터가 답하고 도면이 고로로 넘어간 화면" width="100%"><br>
+      <sub>답과 함께 도면이 <b>고로</b>로 넘어가고, 핵심 용어 카드·보충학습 추천이 붙습니다.<br><b>내 담당</b>: 튜터 API, 화면 조작, 키워드 카드, 보충학습</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
       <b>근거 펼치기</b><br>
       <img src="docs/readme/tutor-evidence.jpg" alt="출선구 질문에 대한 튜터 답변과 펼친 근거 링크" width="100%"><br>
       <sub>답 아래 «근거 n개»를 펼치면 인용한 포스코 공개 자료로 갑니다. 화면은 <b>출선구·주상</b>으로 이동.<br><b>내 담당</b>: 튜터 API, 출처 재검증, 3D 패널 연결(<code>learning-chat.js</code>)</sub>
@@ -51,16 +63,9 @@
       <sub>신입사원·개념별 통계와 CSV·PDF 보고서. 오개념은 개수만 보입니다.<br><b>내 담당</b>: 통계 API·보고서 내보내기 · <b>팀원</b>: 화면, AI 요약</sub>
     </td>
   </tr>
-  <tr>
-    <td colspan="2" align="center" valign="top">
-      <b>2D 학습 화면</b><br>
-      <img src="docs/readme/learn-2d.jpg" alt="소결기 작동 단계 도식 옆 튜터 패널에서 같은 튜터가 답하는 2D 학습 화면" width="80%"><br>
-      <sub>작동 단계 도식 옆에서도 같은 튜터 API로 답합니다. <b>내 담당</b>: 튜터 API · <b>팀원</b>: 화면</sub>
-    </td>
-  </tr>
 </table>
 
-<sub>캡처: 이 포크의 <code>dev</code>를 로컬에서 실행(Gemini), 관리자 화면은 <code>npm run db:seed-demo</code> 시연 기록 기준. 2026-11-08.</sub>
+<sub>캡처: 2026-11-08 로컬 실행(Gemini), 관리자 화면은 <code>npm run db:seed-demo</code> 시연 기록 기준. 3D·관리자 화면은 이 포크의 <code>dev</code>, 학습 기록 카드 화면 2장은 팀 PR #194·#195(10/20~21)로 들어간 디자인을 #198(10/22)에서 되돌리기 직전 상태(<code>cd55b5a</code>)에서 찍었습니다. 현재 <code>dev</code>의 학습 기록 첫 화면은 이전 화면입니다.</sub>
 
 ## 학습 튜터가 답하는 방식
 
