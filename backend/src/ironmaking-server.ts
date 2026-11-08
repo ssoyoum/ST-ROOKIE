@@ -3,7 +3,8 @@ import { GeminiEvaluator } from "../../llm/src/evaluator.js";
 import { DEFAULT_GEMINI_MODEL } from "../../llm/src/gemini.js";
 import { GeminiLearningAgent } from "../../llm/src/learning-agent.js";
 import { configuredProvider, createLlmClient, providerInfo } from "../../llm/src/provider.js";
-import { Retriever } from "../../llm/src/retrieval.js";
+import { Retriever, loadSectionChunks } from "../../llm/src/retrieval.js";
+import { useApprovedSources } from "../../llm/src/ironmaking-sources.js";
 import { GeminiTutor } from "../../llm/src/tutor.js";
 import { createAdminRouter } from "./admin/routes.js";
 import { createApp } from "./app.js";
@@ -28,22 +29,28 @@ import { passcodeRequired } from "./test-access.js";
 import { LlmUsage } from "./usage.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { EducationJobs, jobAwareClient, jobUserId, phaseEvaluator, phaseTutor } from "./education/jobs.js";
+import { EducationRepository } from "./education/repository.js";
+import { createEducationRouter } from "./education/routes.js";
 
 // 루브릭 형식이 틀리면 여기서 예외가 나 서버가 시작되지 않는다.
 const rubrics = loadFinalRubrics();
 
 const db = openDatabase();
 const usage = new LlmUsage(db);
+const jobs = new EducationJobs(db);
+const education = new EducationRepository(db, rubrics);
+useApprovedSources(() => education.approvedSources());
 // 체크포인트·학습·관리자 호출마다 현재 사용자의 하루 호출 수를 센다. 기본 provider는 Gemini다.
-const llm = createLlmClient({
-  gemini: { beforeCall: () => usage.consume(currentUserId()) },
-  vllm: { beforeCall: () => usage.consume(currentUserId()) },
-  ollama: { beforeCall: () => usage.consume(currentUserId()) },
-});
+const llm = jobAwareClient(createLlmClient({
+  gemini: { beforeCall: () => usage.consume(jobUserId() ?? currentUserId()) },
+  vllm: { beforeCall: () => usage.consume(jobUserId() ?? currentUserId()) },
+  ollama: { beforeCall: () => usage.consume(jobUserId() ?? currentUserId()) },
+}));
 const engine = new CheckpointEngine({
   repo: new CheckpointRepository(db),
-  evaluator: new GeminiEvaluator(llm),
-  tutor: new GeminiTutor(llm),
+  evaluator: phaseEvaluator(new GeminiEvaluator(llm)),
+  tutor: phaseTutor(new GeminiTutor(llm)),
   rubrics,
   // 부가 설명 때 튜터에게만 넘긴다(평가자에게는 넘기지 않음).
   learnerNotes: buildLearnerNotes,
@@ -71,9 +78,13 @@ const answerCache = new AnswerCache(
 );
 const sceneCatalog = await loadSceneCatalog();
 const suggestedQuestions = await loadSuggestedQuestions();
+const retriever = new Retriever({
+  glossaryFor: (s) => rubrics.find((r) => r.section === s)?.glossary ?? [],
+  chunksFor: (s) => [...loadSectionChunks(s), ...education.approvedChunks(s)],
+});
 const learning = createLearningRouter({
   repo: learningRepo,
-  retriever: new Retriever({ glossaryFor: (s) => rubrics.find((r) => r.section === s)?.glossary ?? [] }),
+  retriever,
   agent: new GeminiLearningAgent(llm, undefined, configuredProvider() === "ollama" ? "compact" : "full"),
   rubrics,
   // 튜터의 3D 화면 조작(scene_actions)에 쓸 공정·설비 목록. data_v2.js 형식이 틀리면 서버가 시작되지 않는다.
@@ -97,6 +108,9 @@ app.use(createAuthRouter(auth));
 // 관리자 AI 요약도 같은 provider로 관리자 계정의 하루 호출 수를 센다.
 app.use(createAdminRouter(db, auth, { summarizer: new GeminiAdminSummarizer(llm) }));
 app.use(createMeRouter(db, auth));
+app.use(createEducationRouter({ auth, engine, jobs, repo: education,
+  onMaterialsChanged: (section) => { retriever.invalidate(section); answerCache.clear(); },
+}));
 
 const port = Number(process.env.PORT ?? 3000);
 // 이 컴퓨터에서만 접속을 받는다. 원격 공유는 cloudflared 터널(npm run tunnel)이 localhost로 넘겨준다.

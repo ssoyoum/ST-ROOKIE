@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#121212">
+  <title>평가 시험 · ST-ROOKIE</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Montserrat:wght@500;700;800&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="/login_ui/exam.css">
+  <script type="module" src="/login_ui/exam.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/login_ui/home-sleek.html" data-leave><span class="brand-mark" aria-hidden="true"></span>ST-ROOKIE</a>
+    <nav aria-label="주 메뉴"><a href="/?p=ironmaking" data-leave>학습하기</a><a href="/exam" aria-current="page">평가 시험</a><a href="/login" data-leave>학습 기록</a></nav>
+    <div class="top-actions"><span id="profile">내 시험</span><button class="icon-button" id="theme" aria-label="화면 테마 변경">☀</button><button class="text-button" id="logout">로그아웃</button></div>
+  </header>
+  <main>
+    <section class="page-heading">
+      <div><p class="eyebrow">STEEL ACADEMY / ASSESSMENT</p><h1>평가 시험<span class="orange-dot">.</span></h1><p class="lead">배운 공정을 자신의 말로 설명하고, 다음 단계로 나아가세요.</p></div>
+      <div class="criteria"><span class="criteria-number">80<span>%</span></span><div>통과 기준<span>개념별 평가 결과를 합산해요</span></div></div>
+    </section>
+    <div id="notice" class="notice" role="alert" hidden></div>
+    <section class="process-grid" id="sections" aria-label="공정별 시험"><p class="muted">시험 목록을 불러오고 있어요.</p></section>
+    <div class="work-grid">
+      <section class="panel exam-panel" id="exam-content" aria-label="평가 시험 문제"><div class="empty"><span class="empty-symbol" aria-hidden="true">◇</span><h2>응시할 공정을 선택하세요</h2><p>문제 준비부터 답안 평가, 결과 확인까지<br>이 페이지에서 이어서 진행할 수 있어요.</p></div></section>
+      <aside class="aside-stack" aria-label="나의 학습 안내">
+        <section class="panel aside-panel"><div class="section-label"><span class="eyebrow">REVIEW</span><span class="micro" id="review-count"></span></div><h2>나의 복습 일정</h2><div id="reviews"><p class="muted">평가 결과에 따라 복습 일정을 정해요.</p></div></section>
+        <section class="panel aside-panel"><span class="eyebrow">ASSIGNMENTS</span><h2>배정된 시험</h2><div id="assignments"><p class="muted">배정된 시험을 확인하고 있어요.</p></div></section>
+        <section class="panel aside-panel"><span class="eyebrow">HISTORY</span><h2>최근 평가 기록</h2><div id="history"><p class="muted">완료한 평가 결과가 여기에 쌓여요.</p></div></section>
+      </aside>
+    </div>
+    <footer>ST-ROOKIE <span>STEEL ACADEMY · 배움의 마지막 한 번 더</span></footer>
+  </main>
+  <dialog id="forge" class="forge-screen" aria-labelledby="forge-title" aria-describedby="forge-phase">
+    <div class="forge-content">
+      <span class="forge-eyebrow">FORGING YOUR KNOWLEDGE</span>
+      <svg class="forge-art" viewBox="0 0 360 240" aria-hidden="true">
+        <defs><linearGradient id="steel" x1="0" x2="1"><stop stop-color="#999da3"/><stop offset=".45" stop-color="#f0f0ec"/><stop offset="1" stop-color="#6d7278"/></linearGradient><linearGradient id="heat" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#ff6425"/><stop offset="1" stop-color="#ffbe6a"/></linearGradient><radialGradient id="glow"><stop stop-color="#ff7429" stop-opacity=".22"/><stop offset="1" stop-color="#ff7429" stop-opacity="0"/></radialGradient></defs>
+        <ellipse cx="183" cy="161" rx="140" ry="70" fill="url(#glow)"/>
+        <path class="anvil" d="M72 149h214l-28 17h-27l-9 25 25 11v10H121v-10l25-11-9-25H99z" fill="#27282a" stroke="#58514b" stroke-width="2"/>
+        <path d="M73 149h214" stroke="#d9a681" stroke-width="2"/>
+        <rect class="billet" x="155" y="133" width="66" height="15" rx="3" fill="url(#heat)"/>
+        <g class="hammer"><path d="M241 56l-43 62" stroke="#8b5737" stroke-width="12" stroke-linecap="round"/><path d="M239 57l-42 60" stroke="#d39967" stroke-width="5" stroke-linecap="round"/><rect x="166" y="111" width="61" height="23" rx="4" fill="url(#steel)"/><path d="M169 129h55" stroke="#ff8a43" stroke-width="2"/></g>
+        <g class="sparks" stroke="#ff9a46" stroke-width="2.4" stroke-linecap="round"><path d="M181 132l-31-35"/><path d="M184 130l-4-41"/><path d="M200 132l30-30"/><path d="M211 139l41-9"/><path d="M171 140l-42-9"/><path d="M208 142l32 15"/></g>
+        <ellipse cx="185" cy="220" rx="91" ry="5" fill="#000"/>
+      </svg>
+      <h2 id="forge-title">담금질 하기<span class="orange-dot">.</span></h2>
+      <p id="forge-phase" role="status" aria-live="polite">요청을 준비하고 있어요.</p>
+      <div class="forge-line" aria-hidden="true"><span></span></div>
+      <p class="forge-time"><span class="live-dot" aria-hidden="true"></span>처리 중 <time id="elapsed">00:00</time></p>
+      <p class="forge-help">단단한 배움을 만드는 중이에요.<br>응답을 받으면 자동으로 시험 화면으로 돌아가요.</p>
+      <div class="forge-actions"><button id="cancel-job" class="forge-cancel">요청 취소</button><button id="reconnect" class="forge-cancel" hidden>연결 다시 확인</button></div>
+    </div>
+  </dialog>
+</body>
+</html>

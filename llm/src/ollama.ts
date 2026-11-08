@@ -99,7 +99,7 @@ export class OllamaClient implements LlmClient {
           ...(schema ? { format: schema } : {}),
           options: { temperature: req.temperature, num_predict: req.maxOutputTokens, num_ctx: contextLength },
         }),
-        signal: AbortSignal.timeout(this.options.timeoutMs ?? 180_000),
+        signal: req.signal ? AbortSignal.any([req.signal, AbortSignal.timeout(this.options.timeoutMs ?? 180_000)]) : AbortSignal.timeout(this.options.timeoutMs ?? 180_000),
       });
     } catch (error) { throw connectionError(error); }
     if (!response.ok) throw new GeminiCallError(`Ollama HTTP ${response.status}`, response.status === 429 ? "rate_limit" : "http", response.status);

@@ -4,6 +4,8 @@
 
 커밋 메시지 규칙은 [agent.md](agent.md)를 따른다.
 보고는 한국어로 한다.
+
+평가 시험 신규 구현(2026-10-14): 사용자 응시는 `/exam`(`frontend/login_ui/exam.html`·`exam.js`·`exam.css`)에서 진행한다. 학습 기록의 AI 튜터 패널에서 시험 UI를 분리했다. v4 체크포인트 링크도 `/exam`으로 이동한다. 시험 작업·복습·루브릭 이력·교육 배정·자료 검수 API는 `backend/src/education/`, 마이그레이션은 `009_education_workflow.sql`에 있다. 동작과 제한은 [docs/exam-page.md](docs/exam-page.md)를 먼저 읽는다. 아래의 예전 체크포인트 UI 설명은 v3/테스트 페이지의 잔존 동작도 포함한다.
 작업 시작 전과 커밋 전에 현재 브랜치를 확인한다(`git branch --show-current`). IDE 등에서 브랜치가 바뀌어 커밋이 엉뚱한 브랜치에 쌓인 적이 있다.
 시연 서버가 서빙하는 메인 폴더는 `dev`에 둔다. 작업은 별도 worktree에서 한다(예: `git worktree add -b <브랜치> ../ST-ROOKIE-<작업> origin/dev`). 서버는 실행 폴더의 `frontend/`를 그대로 서빙하므로, 메인 폴더에서 브랜치를 바꾸면 시연 화면도 바뀐다.
 

@@ -70,7 +70,7 @@ export class GeminiClient {
                 : { responseMimeType: "text/plain" }),
             },
           }),
-          signal: AbortSignal.timeout(this.options.timeoutMs ?? 60_000),
+          signal: req.signal ? AbortSignal.any([req.signal, AbortSignal.timeout(this.options.timeoutMs ?? 60_000)]) : AbortSignal.timeout(this.options.timeoutMs ?? 60_000),
         },
       );
     } catch (error) {
