@@ -158,9 +158,4 @@ npm.cmd start
 
 ## 저장소 원칙
 
-이 레포는 팀 원본의 포크입니다. 팀 원본과 다른 점은 두 가지입니다.
-
-- README와 README용 캡처(`docs/readme/`)를 제 담당 중심으로 바꿨습니다.
-- 신입사원 학습 기록 첫 화면을 팀원 cookieimda의 카드 화면(#194·#195)으로 되살렸습니다. 팀 원본의 #198 병합을 되돌린 것으로, 바뀐 곳은 `frontend/login_ui/learn/`·`concepts/`, `My Page.dc.html`의 첫 화면 경로, 포석호 첫 안내(`tutor-tour/`)뿐입니다.
-
-백엔드와 나머지 코드·문서는 팀 원본과 같습니다. 서비스 전체 설명과 팀원 담당 부분은 [원본 레포](https://github.com/steel-rookie/ST-ROOKIE)를 봐 주세요.
+이 레포는 팀 원본의 포크이고, README와 README용 캡처(`docs/readme/`)를 제 담당 중심으로 바꿨습니다.
