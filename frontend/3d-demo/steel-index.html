@@ -123,6 +123,19 @@
     .msg.ai { align-self: flex-start; max-width: 94%; display: flex; flex-direction: column; gap: 8px; }
     .msg.ai .b { background: var(--chrome3); padding: 10px 13px; border-radius: 12px 12px 12px 4px; font: 400 15px/1.6 var(--f-body); text-wrap: pretty; white-space: pre-wrap; }
     .msg.ai .cite { font: 400 15px/1.4 var(--f-body); color: var(--muted); padding-left: 4px; }
+    /* 근거: 기본은 접어 두고 "근거 N개"를 눌러 펼친다 */
+    .msg.ai .cites { align-self: flex-start; max-width: 100%; }
+    .msg.ai .cites summary { list-style: none; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line2); background: transparent; color: var(--muted); font: 500 15px/1 var(--f-body); cursor: pointer; user-select: none; }
+    .msg.ai .cites summary::-webkit-details-marker { display: none; }
+    .msg.ai .cites summary::after { content: "▸"; font-size: 12px; transition: transform .2s; }
+    .msg.ai .cites[open] summary::after { transform: rotate(90deg); }
+    .msg.ai .cites summary:hover { color: var(--text); border-color: var(--muted); }
+    .msg.ai .cites ol { margin: 8px 0 0; padding: 10px 12px 10px 30px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.03); display: flex; flex-direction: column; gap: 6px; font: 400 15px/1.45 var(--f-body); color: var(--muted); }
+    .msg.ai .cites a { color: var(--text); text-decoration: underline; text-decoration-color: var(--line2); text-underline-offset: 3px; }
+    /* 답변 일부를 드래그하면 뜨는 "이 부분 물어보기" */
+    #askSel { position: fixed; z-index: 20; display: none; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px; border: 0; background: #f2f2f2; color: #111; font: 700 15px/1 var(--f-body); box-shadow: 0 10px 24px -8px rgba(0,0,0,.6); cursor: pointer; transform: translate(-50%, calc(-100% - 8px)); }
+    #askSel.on { display: inline-flex; }
+    #askSel:hover { background: #fff; }
     .msg.ai .fu { text-align: left; display: flex; flex-direction: column; gap: 2px; background: transparent; border: 1px dashed var(--accent); border-radius: var(--r-s); padding: 8px 12px; color: var(--text); cursor: pointer; font: 400 15px/1.4 var(--f-body); }
     .msg.safety { align-self: flex-start; max-width: 92%; background: rgba(255,90,90,.12); border: 1px solid rgba(255,90,90,.4); color: #ffc9c9; padding: 10px 12px; border-radius: 10px; font: 400 15px/1.55 var(--f-body); }
     .msg.err { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line2); background: var(--chrome3); font: 600 15px/1.4 var(--f-body); }

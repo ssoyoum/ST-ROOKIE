@@ -281,12 +281,63 @@ const sceneFacade = { localName: 'steel-scene', get process() { return cur ? { i
 let chat = null;
 createLearningChat(page).then((c) => { chat = c; if (panel === 'tutor') renderTutor(); });
 function openTutor() { page.state.tutorOpen = true; $('btnTutor').classList.remove('unread'); openPanel('tutor'); page.scrollChat(); }
+// ---- 답변 일부를 드래그해서 "이 부분 물어보기" ---------------------------------------------------------------------
+// 튜터 답변(.msg.ai .b) 안에서 글자를 고르면 그 위에 버튼을 띄운다. 누르면 고른 부분을 인용한 질문을 입력창에 넣고 포커스한다(보내기 전에 고칠 수 있음).
+const ASK_MAX = 160;
+const askSel = document.createElement('button');
+askSel.id = 'askSel'; askSel.type = 'button'; askSel.textContent = '이 부분 물어보기';
+document.body.appendChild(askSel);
+let askText = '';
+function hideAskSel() { askSel.classList.remove('on'); askText = ''; }
+function selectedAnswerText() {
+  const s = window.getSelection();
+  if (!s || s.isCollapsed || !s.rangeCount) return null;
+  const range = s.getRangeAt(0);
+  const host = (n) => (n.nodeType === 1 ? n : n.parentElement)?.closest?.('.msg.ai .b');
+  const a = host(range.startContainer), b = host(range.endContainer);
+  if (!a || a !== b) return null; // 한 답변 안에서 고른 것만
+  const text = s.toString().replace(/\s+/g, ' ').trim();
+  return text ? { text, rect: range.getBoundingClientRect() } : null;
+}
+function updateAskSel() {
+  if (panel !== 'tutor') return hideAskSel();
+  const sel = selectedAnswerText();
+  if (!sel) return hideAskSel();
+  askText = sel.text.length > ASK_MAX ? sel.text.slice(0, ASK_MAX - 1) + '…' : sel.text;
+  askSel.style.left = `${Math.round(sel.rect.left + sel.rect.width / 2)}px`;
+  askSel.style.top = `${Math.round(Math.max(sel.rect.top, 44))}px`;
+  askSel.classList.add('on');
+}
+document.addEventListener('mouseup', () => setTimeout(updateAskSel, 0));
+document.addEventListener('touchend', () => setTimeout(updateAskSel, 0));
+document.addEventListener('keyup', (e) => { if (e.key === 'Escape') hideAskSel(); else if (e.shiftKey) updateAskSel(); });
+document.addEventListener('scroll', hideAskSel, true);
+askSel.addEventListener('mousedown', (e) => e.preventDefault()); // 누르는 순간 선택이 풀리지 않게
+askSel.addEventListener('click', () => {
+  if (!askText) return;
+  const q = `「${askText}」 이 부분을 더 자세히 설명해 줘`;
+  page.state.input = q;
+  const input = $('chatInput');
+  if (input) { input.value = q; input.focus(); input.setSelectionRange(q.length, q.length); }
+  window.getSelection()?.removeAllRanges();
+  hideAskSel();
+});
+// 근거: 답변마다 "근거 N개"로 접어 둔다. 패널을 다시 그려도 펼친 상태가 유지되게 메시지 순번을 기억한다.
+const openCites = new Set();
+function citesHtml(m, i) {
+  const seen = new Set();
+  const list = (m.citations || []).filter((c) => c.title && !seen.has(c.title) && seen.add(c.title));
+  if (!list.length) return '';
+  const items = list.map((c) => `<li>${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.title)}</a>` : esc(c.title)}</li>`).join('');
+  return `<details class="cites" data-ci="${i}"${openCites.has(i) ? ' open' : ''}><summary>근거 ${list.length}개</summary><ol>${items}</ol></details>`;
+}
 function renderTutor() {
+  hideAskSel();
   const v = chat?.vals(DATA) || { messages: [], chips: [], input: '', pending: false };
-  const msgs = v.messages.map((m) => m.isUser ? `<div class="msg user">${esc(m.text)}</div>`
+  const msgs = v.messages.map((m, i) => m.isUser ? `<div class="msg user">${esc(m.text)}</div>`
     : m.isSafety ? `<div class="msg safety">${esc(m.text)}</div>`
     : m.evidence === 'error' ? `<div class="msg err"><img class="ic" width="24" height="24" alt="" src="${icon('alert', '#f5b13d', 1.6)}"><span>답변을 받지 못했어요 · ${esc(m.text)}</span></div>`
-    : `<div class="msg ai"><div class="b">${esc(m.text)}</div>${(m.citations || []).map((c) => `<span class="cite">근거 · ${esc(c.title)}</span>`).join('')}${m.hasFollowUp ? `<button class="fu" data-fu="1"><span style="font-size:15px;color:var(--muted)">이어서 물어보기</span><span>${esc(m.followUp)}</span></button>` : ''}</div>`).join('');
+    : `<div class="msg ai"><div class="b">${esc(m.text)}</div>${citesHtml(m, i)}${m.hasFollowUp ? `<button class="fu" data-fu="1"><span style="font-size:15px;color:var(--muted)">이어서 물어보기</span><span>${esc(m.followUp)}</span></button>` : ''}</div>`).join('');
   right.innerHTML = `<div class="tutorhead"><div style="flex:1"><h1>AI 튜터</h1><small>${cur ? `${cur.data.num} ${esc(cur.data.name)}${curEq ? ` · ${esc(curEq.data.name)}` : ''} 화면을 보고 답해요` : '궁금한 것을 물어보세요'}</small></div><button class="x2" id="tClose" title="닫기" aria-label="닫기"><img class="ic" width="22" height="22" alt="" src="${icon('close', '#e6ebf1', 1.8)}"></button></div>
     <div class="chat" id="chatBox">${msgs}${v.pending ? '<div class="typing"><i></i><i></i><i></i></div>' : ''}
       <div class="chiphead">추천 질문<i></i></div><div class="chips">${(v.chips || []).map((c, i) => `<button data-chip="${i}">${esc(c.text)}</button>`).join('')}</div></div>
@@ -294,10 +345,12 @@ function renderTutor() {
   $('tClose').onclick = () => closePanel();
   right.querySelectorAll('[data-chip]').forEach((b) => { b.onclick = () => v.chips[+b.dataset.chip].onClick(); });
   right.querySelectorAll('[data-fu]').forEach((b, i) => { const ms = v.messages.filter((m) => m.hasFollowUp); b.onclick = () => ms[i]?.askFollowUp(); });
+  right.querySelectorAll('details.cites').forEach((d) => { d.ontoggle = () => { const i = +d.dataset.ci; if (d.open) openCites.add(i); else openCites.delete(i); }; });
   const input = $('chatInput'); input.oninput = (e) => { page.state.input = e.target.value; };
   $('sendForm').onsubmit = (e) => { e.preventDefault(); const t = input.value.trim(); if (!t) return; page.state.input = t; chat?.ask(t); };
   page.scrollChat();
 }
+
 
 // ---- 설비 칩(3D 위). 외관: 지금 설비 하나, 평면: 모든 설비 번호 -----------------------------------------------------
 function tagFor(e) {
