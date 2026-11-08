@@ -65,7 +65,7 @@
   </tr>
 </table>
 
-<sub>캡처: 2026-11-08 로컬 실행(Gemini), 관리자 화면은 <code>npm run db:seed-demo</code> 시연 기록 기준. 3D·관리자 화면은 이 포크의 <code>dev</code>, 학습 기록 카드 화면 2장은 팀 PR #194·#195(10/20~21)로 들어간 디자인을 #198(10/22)에서 되돌리기 직전 상태(<code>cd55b5a</code>)에서 찍었습니다. 현재 <code>dev</code>의 학습 기록 첫 화면은 이전 화면입니다.</sub>
+<sub>캡처: 2026-11-08 로컬 실행(Gemini), 관리자 화면은 <code>npm run db:seed-demo</code> 시연 기록 기준. 학습 기록 첫 화면은 팀 PR #194·#195(cookieimda, 10/20~21)의 카드 화면입니다. 팀 원본에서는 #198(10/22)로 이전 화면으로 되돌렸고, 이 포크에서만 다시 살렸습니다.</sub>
 
 ## 학습 튜터가 답하는 방식
 
@@ -158,4 +158,9 @@ npm.cmd start
 
 ## 저장소 원칙
 
-이 레포는 팀 원본의 포크이고, README와 README용 캡처(`docs/readme/`)만 제 담당 중심으로 바꿨습니다. 코드와 나머지 문서는 팀 원본과 같습니다. 서비스 전체 설명과 팀원 담당 부분은 [원본 레포](https://github.com/steel-rookie/ST-ROOKIE)를 봐 주세요.
+이 레포는 팀 원본의 포크입니다. 팀 원본과 다른 점은 두 가지입니다.
+
+- README와 README용 캡처(`docs/readme/`)를 제 담당 중심으로 바꿨습니다.
+- 신입사원 학습 기록 첫 화면을 팀원 cookieimda의 카드 화면(#194·#195)으로 되살렸습니다. 팀 원본의 #198 병합을 되돌린 것으로, 바뀐 곳은 `frontend/login_ui/learn/`·`concepts/`, `My Page.dc.html`의 첫 화면 경로, 포석호 첫 안내(`tutor-tour/`)뿐입니다.
+
+백엔드와 나머지 코드·문서는 팀 원본과 같습니다. 서비스 전체 설명과 팀원 담당 부분은 [원본 레포](https://github.com/steel-rookie/ST-ROOKIE)를 봐 주세요.
